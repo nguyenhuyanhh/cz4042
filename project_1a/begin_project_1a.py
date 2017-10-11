@@ -6,8 +6,9 @@ import theano
 import theano.tensor as T
 
 
-def init_bias(n=1):
-    return(theano.shared(np.zeros(n), theano.config.floatX))
+def init_bias(n_bias=1):
+    """Initialize bias."""
+    return theano.shared(np.zeros(n_bias), theano.config.floatX)
 
 
 def init_weights(n_in=1, n_out=1, logistic=True):
@@ -21,27 +22,27 @@ def init_weights(n_in=1, n_out=1, logistic=True):
     )
     if logistic:
         weight_values *= 4
-    return (theano.shared(value=weight_values, name='W', borrow=True))
+    return theano.shared(value=weight_values, name='W', borrow=True)
 
 
-def scale(X, X_min, X_max):
+def scale(x_raw, x_min, x_max):
     """Scale the data."""
-    return (X - X_min) / (X_max - np.min(X, axis=0))
+    return (x_raw - x_min) / (x_max - np.min(x_raw, axis=0))
 
 
-def sgd(cost, params, lr=0.01):
+def sgd(cost, params, learning_rate=0.01):
     """Update parameters."""
     grads = T.grad(cost=cost, wrt=params)
     updates = []
-    for p, g in zip(params, grads):
-        updates.append([p, p - g * lr])
+    for param, grad in zip(params, grads):
+        updates.append([param, param - grad * learning_rate])
     return updates
 
 
 def shuffle_data(samples, labels):
+    """Shuffle the data."""
     idx = np.arange(samples.shape[0])
     np.random.shuffle(idx)
-    #print  (samples.shape, labels.shape)
     samples, labels = samples[idx], labels[idx]
     return samples, labels
 
