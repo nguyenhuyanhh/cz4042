@@ -81,51 +81,49 @@ def main(batch_size=32, hl_neuron=10, decay=1e-6):
     epochs = 1000
 
     # theano expressions
-    X = T.matrix()  # features
-    Y = T.matrix()  # output
+    x_mat = T.matrix()  # features
+    y_mat = T.matrix()  # output
 
     # weights and biases from input to hidden layer
-    w1, b1 = init_weights(36, hl_neuron), init_bias(hl_neuron)
-    w2, b2 = init_weights(hl_neuron, 6, logistic=False), init_bias(
-        6)  # weights and biases from hidden to output layer
+    weight_1, bias_1 = init_weights(36, hl_neuron), init_bias(hl_neuron)
+    # weights and biases from hidden to output layer
+    weight_2, bias_2 = init_weights(hl_neuron, 6, logistic=False), init_bias(6)
 
-    h1 = T.nnet.sigmoid(T.dot(X, w1) + b1)
-    py = T.nnet.softmax(T.dot(h1, w2) + b2)
+    hidden_1 = T.nnet.sigmoid(T.dot(x_mat, weight_1) + bias_1)
+    output_1 = T.nnet.softmax(T.dot(hidden_1, weight_2) + bias_2)
 
-    y_x = T.argmax(py, axis=1)
+    y_x = T.argmax(output_1, axis=1)
 
-    cost = T.mean(T.nnet.categorical_crossentropy(py, Y)) + \
-        decay * (T.sum(T.sqr(w1) + T.sum(T.sqr(w2))))
-    params = [w1, b1, w2, b2]
+    cost = T.mean(T.nnet.categorical_crossentropy(output_1, y_mat)) + \
+        decay * (T.sum(T.sqr(weight_1) + T.sum(T.sqr(weight_2))))
+    params = [weight_1, bias_1, weight_2, bias_2]
     updates = sgd(cost, params, learning_rate)
 
     # compile
     train = theano.function(
-        inputs=[X, Y], outputs=cost, updates=updates, allow_input_downcast=True)
+        inputs=[x_mat, y_mat], outputs=cost, updates=updates, allow_input_downcast=True)
     predict = theano.function(
-        inputs=[X], outputs=y_x, allow_input_downcast=True)
+        inputs=[x_mat], outputs=y_x, allow_input_downcast=True)
 
     # train and test
-    trainX, trainY, testX, testY = load_train_test()
-    n = len(trainX)
+    train_x, train_y, test_x, test_y = load_train_test()
+    n_tr = len(train_x)
     test_accuracy = []
     train_cost = []
     timings = []
     start_time = 0
     for i in range(epochs):
-        if i % 1000 == 0:
-            print(i)
-
-        trainX, trainY = shuffle_data(trainX, trainY)
+        train_x, train_y = shuffle_data(train_x, train_y)
         cost = 0.0
-        for start, end in zip(range(0, n, batch_size), range(batch_size, n, batch_size)):
+        
+        for start, end in zip(range(0, n_tr, batch_size), range(batch_size, n_tr, batch_size)):
             start_time = time.time()
-            cost += train(trainX[start:end], trainY[start:end])
+            cost += train(train_x[start:end], train_y[start:end])
             timings.append((time.time()-start_time)*1e6)
-        train_cost = np.append(train_cost, cost / (n // batch_size))
+        train_cost = np.append(train_cost, cost / (n_tr // batch_size))
 
         test_accuracy = np.append(test_accuracy, np.mean(
-            np.argmax(testY, axis=1) == predict(testX)))
+            np.argmax(test_y, axis=1) == predict(test_x)))
 
     print('%.1f accuracy at %d iterations' %
           (np.max(test_accuracy) * 100, np.argmax(test_accuracy) + 1))
