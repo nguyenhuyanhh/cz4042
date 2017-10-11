@@ -1,0 +1,65 @@
+\documentclass[11pt]{report}
+    
+% report format
+\usepackage[utf8]{inputenc}
+\usepackage[a4paper, margin=2.54cm]{geometry}
+\usepackage{setspace}
+\onehalfspacing{}
+
+\usepackage{graphicx}
+\usepackage{listings}
+\usepackage{color}
+
+% some configurations for the listings package
+\definecolor{codegreen}{rgb}{0,0.6,0}
+\definecolor{codegray}{rgb}{0.5,0.5,0.5}
+\definecolor{codepurple}{rgb}{0.58,0,0.82}
+\definecolor{backcolour}{rgb}{0.95,0.95,0.92}
+\lstdefinestyle{mystyle}{
+    backgroundcolor=\color{backcolour},
+    commentstyle=\color{codegreen},
+    keywordstyle=\color{magenta},
+    numberstyle=\tiny\color{codegray},
+    stringstyle=\color{codepurple},
+    basicstyle=\footnotesize\ttfamily,
+    breakatwhitespace=false,
+    breaklines=true,
+    captionpos=b,
+    keepspaces=true,
+    numbers=left,
+    numbersep=5pt,
+    showspaces=false,
+    showstringspaces=false,
+    showtabs=false,
+}
+\lstset{style=mystyle}
+
+% actual report
+\begin{document}
+\begin{titlepage}
+    \begin{center}
+    
+    % school logo
+    \includegraphics[width=0.9\textwidth]{images/ntu_logo.png}
+    \\[6cm]
+    
+    % report title and author
+    \uppercase{
+    \textbf{CZ4042 Neural Networks}\\
+    \textbf{Project 1 Report}
+    \\[3cm]
+    \textbf{Nguyen Huy Anh (U1420871B)}\\
+    \textbf{Lee Vic Son (U14XXXXXX)}
+    }
+    
+    \vfill
+    
+    % Bottom of the page
+    \textbf{School of Computer Science and Engineering}
+    \\
+    \textbf{Academic Year 2017/18, Semester 1}
+    
+    \end{center}
+\end{titlepage}
+
+\end{document}
