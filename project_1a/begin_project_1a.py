@@ -47,6 +47,34 @@ def shuffle_data(samples, labels):
     return samples, labels
 
 
+def load_train_test():
+    """Load training and testing data."""
+    # train data
+    train_input = np.loadtxt('sat_train.txt', delimiter=' ')
+    train_x, train_y_tmp = train_input[:, :36], train_input[:, -1].astype(int)
+    train_x_min, train_x_max = np.min(train_x, axis=0), np.max(train_x, axis=0)
+    train_x = scale(train_x, train_x_min, train_x_max)
+    train_y_tmp[train_y_tmp == 7] = 6  # convert class label 7 to 6
+    train_y = np.zeros((train_y_tmp.shape[0], 6))
+    train_y[np.arange(train_y_tmp.shape[0]), train_y_tmp - 1] = 1
+
+    # test data
+    test_input = np.loadtxt('sat_test.txt', delimiter=' ')
+    test_x, test_y_tmp = test_input[:, :36], test_input[:, -1].astype(int)
+    test_x_min, test_x_max = np.min(test_x, axis=0), np.max(test_x, axis=0)
+    test_x = scale(test_x, test_x_min, test_x_max)
+    test_y_tmp[test_y_tmp == 7] = 6
+    test_y = np.zeros((test_y_tmp.shape[0], 6))
+    test_y[np.arange(test_y_tmp.shape[0]), test_y_tmp - 1] = 1
+
+    assert train_x.shape == (4435, 36)
+    assert train_y.shape == (4435, 6)
+    assert test_x.shape == (2000, 36)
+    assert test_y.shape == (2000, 6)
+
+    return train_x, train_y, test_x, test_y
+
+
 def main(batch_size=32, hl_neuron=10, decay=1e-6):
     """Entry point for script."""
     learning_rate = 0.01
@@ -77,37 +105,8 @@ def main(batch_size=32, hl_neuron=10, decay=1e-6):
     predict = theano.function(
         inputs=[X], outputs=y_x, allow_input_downcast=True)
 
-    # read train data
-    train_input = np.loadtxt('sat_train.txt', delimiter=' ')
-    trainX, train_Y = train_input[:, :36], train_input[:, -1].astype(int)
-    trainX_min, trainX_max = np.min(trainX, axis=0), np.max(trainX, axis=0)
-    trainX = scale(trainX, trainX_min, trainX_max)
-
-    train_Y[train_Y == 7] = 6
-    trainY = np.zeros((train_Y.shape[0], 6))
-    trainY[np.arange(train_Y.shape[0]), train_Y - 1] = 1
-
-    # read test data
-    test_input = np.loadtxt('sat_test.txt', delimiter=' ')
-    testX, test_Y = test_input[:, :36], test_input[:, -1].astype(int)
-
-    testX_min, testX_max = np.min(testX, axis=0), np.max(testX, axis=0)
-    testX = scale(testX, testX_min, testX_max)
-
-    test_Y[test_Y == 7] = 6
-    testY = np.zeros((test_Y.shape[0], 6))
-    testY[np.arange(test_Y.shape[0]), test_Y - 1] = 1
-
-    print(trainX.shape, trainY.shape)
-    print(testX.shape, testY.shape)
-
-    # first, experiment with a small sample of data
-    ##trainX = trainX[:1000]
-    ##trainY = trainY[:1000]
-    ##testX = testX[-250:]
-    ##testY = testY[-250:]
-
     # train and test
+    trainX, trainY, testX, testY = load_train_test()
     n = len(trainX)
     test_accuracy = []
     train_cost = []
@@ -129,12 +128,20 @@ def main(batch_size=32, hl_neuron=10, decay=1e-6):
 
     return (train_cost, test_accuracy)
 
+
 if __name__ == '__main__':
     train_cost = []
     test_accuracy = []
     cost_args = []
     accuracy_args = []
 
+<<<<<<< HEAD
+    for batch_size in [4, 8, 16, 32, 64]:
+        train_cost, test_accuracy = main(batch_size=batch_size)
+        cost_args += [range(1000), train_cost]
+        accuracy_args += [range(1000), test_accuracy]
+
+=======
     search_space = [4,8,16,32,64]
     
     for batch_size in search_space:
@@ -142,6 +149,7 @@ if __name__ == '__main__':
         cost_args += [train_cost]
         accuracy_args += [test_accuracy]
     
+>>>>>>> master
     # Plots
     plt.figure()
     for item, value in zip(cost_args,search_space):
