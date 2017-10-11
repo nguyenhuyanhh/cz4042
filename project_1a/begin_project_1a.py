@@ -47,20 +47,18 @@ def shuffle_data(samples, labels):
     return samples, labels
 
 
-def main():
+def main(batch_size=32, hl_neuron=10, decay=1e-6):
     """Entry point for script."""
-    decay = 1e-6
     learning_rate = 0.01
     epochs = 1000
-    batch_size = 32
 
     # theano expressions
     X = T.matrix()  # features
     Y = T.matrix()  # output
 
     # weights and biases from input to hidden layer
-    w1, b1 = init_weights(36, 10), init_bias(10)
-    w2, b2 = init_weights(10, 6, logistic=False), init_bias(
+    w1, b1 = init_weights(36, hl_neuron), init_bias(hl_neuron)
+    w2, b2 = init_weights(hl_neuron, 6, logistic=False), init_bias(
         6)  # weights and biases from hidden to output layer
 
     h1 = T.nnet.sigmoid(T.dot(X, w1) + b1)
@@ -129,23 +127,32 @@ def main():
     print('%.1f accuracy at %d iterations' %
           (np.max(test_accuracy) * 100, np.argmax(test_accuracy) + 1))
 
+    return (train_cost, test_accuracy)
+
+if __name__ == '__main__':
+    train_cost = []
+    test_accuracy = []
+    cost_args = []
+    accuracy_args = []
+    
+    for batch_size in [4,8,16,32,64]:
+        train_cost, test_accuracy = main(batch_size=batch_size)
+        cost_args += [range(1000), train_cost]
+        accuracy_args += [range(1000), test_accuracy]
+    
     # Plots
     plt.figure()
-    plt.plot(range(epochs), train_cost)
+    plt.plot(*cost_args)
     plt.xlabel('iterations')
     plt.ylabel('cross-entropy')
     plt.title('training cost')
     plt.savefig('p1a_sample_cost.png')
 
     plt.figure()
-    plt.plot(range(epochs), test_accuracy)
+    plt.plot(*accuracy_args)
     plt.xlabel('iterations')
     plt.ylabel('accuracy')
     plt.title('test accuracy')
     plt.savefig('p1a_sample_accuracy.png')
 
     plt.show()
-
-
-if __name__ == '__main__':
-    main()
