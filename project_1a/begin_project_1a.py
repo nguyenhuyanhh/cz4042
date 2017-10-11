@@ -1,10 +1,13 @@
 """Project 1a: Classification."""
 
+import time
+from itertools import izip
+
 import matplotlib.pyplot as plt
 import numpy as np
 import theano
 import theano.tensor as T
-import time 
+
 
 def init_bias(n_bias=1):
     """Initialize bias."""
@@ -115,11 +118,11 @@ def main(batch_size=32, hl_neuron=10, decay=1e-6):
     for i in range(epochs):
         train_x, train_y = shuffle_data(train_x, train_y)
         cost = 0.0
-        
-        for start, end in zip(range(0, n_tr, batch_size), range(batch_size, n_tr, batch_size)):
+
+        for start, end in izip(range(0, n_tr, batch_size), range(batch_size, n_tr, batch_size)):
             start_time = time.time()
             cost += train(train_x[start:end], train_y[start:end])
-            timings.append((time.time()-start_time)*1e6)
+            timings.append((time.time() - start_time) * 1e6)
         train_cost = np.append(train_cost, cost / (n_tr // batch_size))
 
         test_accuracy = np.append(test_accuracy, np.mean(
@@ -150,7 +153,7 @@ if __name__ == '__main__':
 
     # Plots
     plt.figure()
-    for item, value in zip(cost_args, search_space):
+    for item, value in izip(cost_args, search_space):
         plt.plot(range(1000), item, label="batch={}".format(value))
     plt.xlabel('iterations')
     plt.ylabel('cross-entropy')
@@ -159,7 +162,7 @@ if __name__ == '__main__':
     plt.savefig('p1a_sample_cost.png')
 
     plt.figure()
-    for item, value in zip(accuracy_args, search_space):
+    for item, value in izip(accuracy_args, search_space):
         plt.plot(range(1000), item, label="batch={}".format(value))
     plt.xlabel('iterations')
     plt.ylabel('accuracy')
@@ -168,7 +171,7 @@ if __name__ == '__main__':
     plt.savefig('p1a_sample_accuracy.png')
 
     plt.figure()
-    plt.plot(search_space, average_times,'bx-')
+    plt.plot(search_space, average_times, 'bx-')
     plt.xlabel('batch size')
     plt.ylabel('time to update in microseconds')
     plt.title('update time vs batch size')
