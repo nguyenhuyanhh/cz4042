@@ -134,25 +134,37 @@ if __name__ == '__main__':
     test_accuracy = []
     cost_args = []
     accuracy_args = []
+
+    search_space = [4,8,16,32,64]
     
-    for batch_size in [4,8,16,32,64]:
+    for batch_size in search_space:
         train_cost, test_accuracy = main(batch_size=batch_size)
-        cost_args += [range(1000), train_cost]
-        accuracy_args += [range(1000), test_accuracy]
+        cost_args += [train_cost]
+        accuracy_args += [test_accuracy]
     
     # Plots
     plt.figure()
-    plt.plot(*cost_args)
+    for item, value in zip(cost_args,search_space):
+        plt.plot(range(1000),item,label="batch={}".format(value))
     plt.xlabel('iterations')
     plt.ylabel('cross-entropy')
     plt.title('training cost')
+    plt.legend()
     plt.savefig('p1a_sample_cost.png')
 
     plt.figure()
-    plt.plot(*accuracy_args)
+    for item, value in zip(accuracy_args,search_space):
+        plt.plot(range(1000),item,label="batch={}".format(value))
     plt.xlabel('iterations')
     plt.ylabel('accuracy')
     plt.title('test accuracy')
+    plt.legend()
     plt.savefig('p1a_sample_accuracy.png')
+
+    # forced garbage collection test
+    train_cost = []
+    test_accuracy = []
+    cost_args = []
+    accuracy_args = []
 
     plt.show()
