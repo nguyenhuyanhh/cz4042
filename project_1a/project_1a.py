@@ -9,9 +9,10 @@ import matplotlib.pyplot as plt
 import numpy as np
 import theano
 import theano.tensor as T
+from tqdm import tqdm
 
-from nn_utils import (init_bias, init_weights, load_train_test, scale, sgd,
-                      shuffle_data)
+from nn_utils import (init_bias, init_weights,
+                      load_train_test, sgd, shuffle_data)
 
 try:
     from itertools import izip as zip
@@ -57,7 +58,7 @@ def nn_3_layer(batch_size=4, hl_neuron=10, decay=1e-6, learning_rate=0.01, epoch
     train_cost = []
     timings = []
     start_time = 0
-    for i in range(epochs):
+    for _ in tqdm(range(epochs)):
         train_x, train_y = shuffle_data(train_x, train_y)
         cost = 0.0
 

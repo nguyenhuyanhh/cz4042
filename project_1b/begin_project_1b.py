@@ -1,3 +1,5 @@
+"""Project 1b: Approximation."""
+
 import time
 
 import matplotlib.pyplot as plt
@@ -35,34 +37,36 @@ def shuffle_data(samples, labels):
 
 
 def main():
+    """Entry point for module."""
     # read and divide data into test and train sets
     cal_housing = np.loadtxt('cal_housing.data', delimiter=',')
-    X_data, Y_data = cal_housing[:, :8], cal_housing[:, -1]
-    Y_data = (np.asmatrix(Y_data)).transpose()
+    x_data, y_data = cal_housing[:, :8], cal_housing[:, -1]
+    y_data = (np.asmatrix(y_data)).transpose()
 
-    X_data, Y_data = shuffle_data(X_data, Y_data)
+    x_data, y_data = shuffle_data(x_data, y_data)
 
     # separate train and test data
-    m = 3 * X_data.shape[0] // 10
-    testX, testY = X_data[:m], Y_data[:m]
-    trainX, trainY = X_data[m:], Y_data[m:]
+    m = 3 * x_data.shape[0] // 10
+    test_x, test_y = x_data[:m], y_data[:m]
+    train_x, train_y = x_data[m:], y_data[m:]
 
     # scale and normalize data
-    trainX_max, trainX_min = np.max(trainX, axis=0), np.min(trainX, axis=0)
-    testX_max, testX_min = np.max(testX, axis=0), np.min(testX, axis=0)
+    train_x_max, train_x_min = np.max(train_x, axis=0), np.min(train_x, axis=0)
+    test_x_max, test_x_min = np.max(test_x, axis=0), np.min(test_x, axis=0)
 
-    trainX = scale(trainX, trainX_min, trainX_max)
-    testX = scale(testX, testX_min, testX_max)
+    train_x = scale(train_x, train_x_min, train_x_max)
+    test_x = scale(test_x, test_x_min, test_x_max)
 
-    trainX_mean, trainX_std = np.mean(trainX, axis=0), np.std(trainX, axis=0)
-    testX_mean, testX_std = np.mean(testX, axis=0), np.std(testX, axis=0)
+    train_x_mean, train_x_std = np.mean(
+        train_x, axis=0), np.std(train_x, axis=0)
+    test_x_mean, test_x_std = np.mean(test_x, axis=0), np.std(test_x, axis=0)
 
-    trainX = normalize(trainX, trainX_mean, trainX_std)
-    testX = normalize(testX, testX_mean, testX_std)
+    train_x = normalize(train_x, train_x_mean, train_x_std)
+    test_x = normalize(test_x, test_x_mean, test_x_std)
 
-    no_features = trainX.shape[1]
-    x = T.matrix('x')  # data sample
-    d = T.matrix('d')  # desired output
+    no_features = train_x.shape[1]
+    x_mat = T.matrix('x')  # data sample
+    d_mat = T.matrix('d')  # desired output
     no_samples = T.scalar('no_samples')
 
     # initialize weights and biases for hidden layer(s) and output layer
@@ -76,17 +80,17 @@ def main():
     alpha = theano.shared(learning_rate, floatX)
 
     # Define mathematical expression:
-    h1_out = T.nnet.sigmoid(T.dot(x, w_h1) + b_h1)
-    y = T.dot(h1_out, w_o) + b_o
+    h1_out = T.nnet.sigmoid(T.dot(x_mat, w_h1) + b_h1)
+    y_vec = T.dot(h1_out, w_o) + b_o
 
-    cost = T.abs_(T.mean(T.sqr(d - y)))
-    accuracy = T.mean(d - y)
+    cost = T.abs_(T.mean(T.sqr(d_mat - y_vec)))
+    accuracy = T.mean(d_mat - y_vec)
 
     # define gradients
     dw_o, db_o, dw_h, db_h = T.grad(cost, [w_o, b_o, w_h1, b_h1])
 
     train = theano.function(
-        inputs=[x, d],
+        inputs=[x_mat, d_mat],
         outputs=cost,
         updates=[[w_o, w_o - alpha * dw_o],
                  [b_o, b_o - alpha * db_o],
@@ -96,8 +100,8 @@ def main():
     )
 
     test = theano.function(
-        inputs=[x, d],
-        outputs=[y, cost, accuracy],
+        inputs=[x_mat, d_mat],
+        outputs=[y_vec, cost, accuracy],
         allow_input_downcast=True
     )
 
@@ -120,10 +124,10 @@ def main():
         if iter % 100 == 0:
             print(iter)
 
-        trainX, trainY = shuffle_data(trainX, trainY)
-        train_cost[iter] = train(trainX, np.transpose(trainY))
+        train_x, train_y = shuffle_data(train_x, train_y)
+        train_cost[iter] = train(train_x, np.transpose(train_y))
         pred, test_cost[iter], test_accuracy[iter] = test(
-            testX, np.transpose(testY))
+            test_x, np.transpose(test_y))
 
         if test_cost[iter] < min_error:
             best_iter = iter
@@ -139,7 +143,7 @@ def main():
     w_h1.set_value(best_w_h1)
     b_h1.set_value(best_b_h1)
 
-    best_pred, best_cost, best_accuracy = test(testX, np.transpose(testY))
+    best_pred, best_cost, best_accuracy = test(test_x, np.transpose(test_y))
 
     print('Minimum error: %.1f, Best accuracy %.1f, Number of Iterations: %d' %
           (best_cost, best_accuracy, best_iter))
