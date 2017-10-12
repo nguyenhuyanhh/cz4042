@@ -1,88 +1,30 @@
 """Project 1a: Classification."""
 
+from __future__ import print_function
+
+import os
 import time
-from itertools import izip
 
 import matplotlib.pyplot as plt
 import numpy as np
 import theano
 import theano.tensor as T
 
+from nn_utils import (init_bias, init_weights, load_train_test, scale, sgd,
+                      shuffle_data)
 
-def init_bias(n_bias=1):
-    """Initialize bias."""
-    return theano.shared(np.zeros(n_bias), theano.config.floatX)
-
-
-def init_weights(n_in=1, n_out=1, logistic=True):
-    """Initialize weights."""
-    weight_values = np.asarray(
-        np.random.uniform(
-            low=-np.sqrt(6. / (n_in + n_out)),
-            high=np.sqrt(6. / (n_in + n_out)),
-            size=(n_in, n_out)),
-        dtype=theano.config.floatX
-    )
-    if logistic:
-        weight_values *= 4
-    return theano.shared(value=weight_values, name='W', borrow=True)
+try:
+    from itertools import izip as zip
+except ImportError:  # py3 without itertools.izip
+    pass
 
 
-def scale(x_raw, x_min, x_max):
-    """Scale the data."""
-    return (x_raw - x_min) / (x_max - np.min(x_raw, axis=0))
+# init path
+CUR_DIR = os.path.dirname(os.path.realpath(__file__))
 
 
-def sgd(cost, params, learning_rate=0.01):
-    """Update parameters."""
-    grads = T.grad(cost=cost, wrt=params)
-    updates = []
-    for param, grad in zip(params, grads):
-        updates.append([param, param - grad * learning_rate])
-    return updates
-
-
-def shuffle_data(samples, labels):
-    """Shuffle the data."""
-    idx = np.arange(samples.shape[0])
-    np.random.shuffle(idx)
-    samples, labels = samples[idx], labels[idx]
-    return samples, labels
-
-
-def load_train_test():
-    """Load training and testing data."""
-    # train data
-    train_input = np.loadtxt('sat_train.txt', delimiter=' ')
-    train_x, train_y_tmp = train_input[:, :36], train_input[:, -1].astype(int)
-    train_x_min, train_x_max = np.min(train_x, axis=0), np.max(train_x, axis=0)
-    train_x = scale(train_x, train_x_min, train_x_max)
-    train_y_tmp[train_y_tmp == 7] = 6  # convert class label 7 to 6
-    train_y = np.zeros((train_y_tmp.shape[0], 6))
-    train_y[np.arange(train_y_tmp.shape[0]), train_y_tmp - 1] = 1
-
-    # test data
-    test_input = np.loadtxt('sat_test.txt', delimiter=' ')
-    test_x, test_y_tmp = test_input[:, :36], test_input[:, -1].astype(int)
-    test_x_min, test_x_max = np.min(test_x, axis=0), np.max(test_x, axis=0)
-    test_x = scale(test_x, test_x_min, test_x_max)
-    test_y_tmp[test_y_tmp == 7] = 6
-    test_y = np.zeros((test_y_tmp.shape[0], 6))
-    test_y[np.arange(test_y_tmp.shape[0]), test_y_tmp - 1] = 1
-
-    assert train_x.shape == (4435, 36)
-    assert train_y.shape == (4435, 6)
-    assert test_x.shape == (2000, 36)
-    assert test_y.shape == (2000, 6)
-
-    return train_x, train_y, test_x, test_y
-
-
-def main(batch_size=4, hl_neuron=10, decay=1e-6):
-    """Entry point for script."""
-    learning_rate = 0.01
-    epochs = 1000
-
+def nn_3_layer(batch_size=4, hl_neuron=10, decay=1e-6, learning_rate=0.01, epochs=1000):
+    """Neural network with 3 layers."""
     # theano expressions
     x_mat = T.matrix()  # features
     y_mat = T.matrix()  # output
@@ -119,7 +61,7 @@ def main(batch_size=4, hl_neuron=10, decay=1e-6):
         train_x, train_y = shuffle_data(train_x, train_y)
         cost = 0.0
 
-        for start, end in izip(range(0, n_tr, batch_size), range(batch_size, n_tr, batch_size)):
+        for start, end in zip(range(0, n_tr, batch_size), range(batch_size, n_tr, batch_size)):
             start_time = time.time()
             cost += train(train_x[start:end], train_y[start:end])
             timings.append((time.time() - start_time) * 1e6)
@@ -146,36 +88,36 @@ if __name__ == '__main__':
     search_space = [5, 10, 15, 20, 25]
 
     for neuron_num in search_space:
-        train_cost, test_accuracy, timing = main(hl_neuron=neuron_num)
+        train_cost, test_accuracy, timing = nn_3_layer(hl_neuron=neuron_num)
         cost_args += [train_cost]
         accuracy_args += [test_accuracy]
         average_times += [timing]
 
     # Plots
     plt.figure()
-    for item, value in izip(cost_args, search_space):
+    for item, value in zip(cost_args, search_space):
         plt.plot(range(1000), item, label="neurons={}".format(value))
     plt.xlabel('iterations')
     plt.ylabel('cross-entropy')
     plt.title('training cost')
     plt.legend()
-    plt.savefig('p1a_sample_cost.png')
+    plt.savefig(os.path.join(CUR_DIR, 'p1a_sample_cost.png'))
 
     plt.figure()
-    for item, value in izip(accuracy_args, search_space):
+    for item, value in zip(accuracy_args, search_space):
         plt.plot(range(1000), item, label="neurons={}".format(value))
     plt.xlabel('iterations')
     plt.ylabel('accuracy')
     plt.title('test accuracy')
     plt.legend()
-    plt.savefig('p1a_sample_accuracy.png')
+    plt.savefig(os.path.join(CUR_DIR, 'p1a_sample_accuracy.png'))
 
     plt.figure()
     plt.plot(search_space, average_times, 'bx-')
     plt.xlabel('batch size')
     plt.ylabel('time to update in microseconds')
     plt.title('update time vs batch size')
-    plt.savefig('p1a_sample_times.png')
+    plt.savefig(os.path.join(CUR_DIR, 'p1a_sample_times.png'))
 
     # forced garbage collection test
     train_cost = []
