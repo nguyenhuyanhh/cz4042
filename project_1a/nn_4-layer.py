@@ -90,16 +90,19 @@ def main(batch_size=4, hl_neuron=10, decay=1e-6):
     # weights and biases from input to hidden layer
     weight_1, bias_1 = init_weights(36, hl_neuron), init_bias(hl_neuron)
     # weights and biases from hidden to output layer
-    weight_2, bias_2 = init_weights(hl_neuron, 6, logistic=False), init_bias(6)
+    weight_2, bias_2 = init_weights(hl_neuron, hl_neuron), init_bias(hl_neuron)
+    weight_3, bias_3 = init_weights(hl_neuron, 6, logistic=False), init_bias(6)
 
     hidden_1 = T.nnet.sigmoid(T.dot(x_mat, weight_1) + bias_1)
-    output_1 = T.nnet.softmax(T.dot(hidden_1, weight_2) + bias_2)
+    hidden_2 = T.nnet.sigmoid(T.dot(hidden_1, weight_2) + bias_2)
+    output_1 = T.nnet.softmax(T.dot(hidden_2, weight_3) + bias_3)
 
     y_x = T.argmax(output_1, axis=1)
 
     cost = T.mean(T.nnet.categorical_crossentropy(output_1, y_mat)) + \
-        decay * (T.sum(T.sqr(weight_1) + T.sum(T.sqr(weight_2))))
-    params = [weight_1, bias_1, weight_2, bias_2]
+        decay * (T.sum(T.sqr(weight_1) + T.sum(T.sqr(weight_2) + \
+                 T.sum(T.sqr(weight_3)))))
+    params = [weight_1, bias_1, weight_2, bias_2, weight_3, bias_3]
     updates = sgd(cost, params, learning_rate)
 
     # compile
@@ -143,10 +146,10 @@ if __name__ == '__main__':
     accuracy_args = []
     average_times = []
 
-    search_space = [5, 10, 15, 20, 25]
+    search_space = [32]
 
-    for neuron_num in search_space:
-        train_cost, test_accuracy, timing = main(hl_neuron=neuron_num)
+    for batch_size in search_space:
+        train_cost, test_accuracy, timing = main(batch_size=batch_size)
         cost_args += [train_cost]
         accuracy_args += [test_accuracy]
         average_times += [timing]
@@ -154,7 +157,7 @@ if __name__ == '__main__':
     # Plots
     plt.figure()
     for item, value in izip(cost_args, search_space):
-        plt.plot(range(1000), item, label="neurons={}".format(value))
+        plt.plot(range(1000), item, label="4-layer")
     plt.xlabel('iterations')
     plt.ylabel('cross-entropy')
     plt.title('training cost')
@@ -163,7 +166,7 @@ if __name__ == '__main__':
 
     plt.figure()
     for item, value in izip(accuracy_args, search_space):
-        plt.plot(range(1000), item, label="neurons={}".format(value))
+        plt.plot(range(1000), item, label="4-layer")
     plt.xlabel('iterations')
     plt.ylabel('accuracy')
     plt.title('test accuracy')
@@ -172,9 +175,9 @@ if __name__ == '__main__':
 
     plt.figure()
     plt.plot(search_space, average_times, 'bx-')
-    plt.xlabel('batch size')
+    plt.xlabel('number of neurons')
     plt.ylabel('time to update in microseconds')
-    plt.title('update time vs batch size')
+    plt.title('update time vs neuron number')
     plt.savefig('p1a_sample_times.png')
 
     # forced garbage collection test
