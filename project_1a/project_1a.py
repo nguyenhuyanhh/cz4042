@@ -23,9 +23,20 @@ except ImportError:  # py3 without itertools.izip
 # init path
 CUR_DIR = os.path.dirname(os.path.realpath(__file__))
 
+# number of epochs
+EPOCHS = 1000
 
-def nn_3_layer(batch_size=4, hl_neuron=10, decay=1e-6, learning_rate=0.01, epochs=1000):
-    """Neural network with 3 layers."""
+
+def nn_3_layer(batch_size=4, hl_neuron=10, decay=1e-6):
+    """Neural network with 3 layers.
+
+    Arguments:
+        batch_size: int - batch size for mini-batch gradient descent
+        hl_neuron: int - number of neurons for hidden layer
+        decay: float - decay parameter
+    """
+    learning_rate = 0.01
+
     # theano expressions
     x_mat = T.matrix()  # features
     y_mat = T.matrix()  # output
@@ -58,7 +69,7 @@ def nn_3_layer(batch_size=4, hl_neuron=10, decay=1e-6, learning_rate=0.01, epoch
     train_cost = []
     timings = []
     start_time = 0
-    for _ in tqdm(range(epochs)):
+    for _ in tqdm(range(EPOCHS)):
         train_x, train_y = shuffle_data(train_x, train_y)
         cost = 0.0
 
@@ -74,56 +85,79 @@ def nn_3_layer(batch_size=4, hl_neuron=10, decay=1e-6, learning_rate=0.01, epoch
     print('%.1f accuracy at %d iterations' %
           (np.max(test_accuracy) * 100, np.argmax(test_accuracy) + 1))
     average_time = np.average(timings)
-    print('average time per update: {}'.format(average_time))
+    print('average time per update: {} microseconds'.format(average_time))
 
     return (train_cost, test_accuracy, average_time)
 
 
-if __name__ == '__main__':
-    train_cost = []
-    test_accuracy = []
+def search(param, search_space, plot_cost=True, plot_acc=True, plot_time=True, plot_max_acc=False):
+    """Search for the optimal parameters, and graph the results."""
     cost_args = []
     accuracy_args = []
     average_times = []
 
-    search_space = [5, 10, 15, 20, 25]
-
-    for neuron_num in search_space:
-        train_cost, test_accuracy, timing = nn_3_layer(hl_neuron=neuron_num)
+    for value in search_space:
+        nn_args = {param: value}
+        train_cost, test_accuracy, timing = nn_3_layer(**nn_args)
         cost_args += [train_cost]
         accuracy_args += [test_accuracy]
         average_times += [timing]
 
-    # Plots
-    plt.figure()
-    for item, value in zip(cost_args, search_space):
-        plt.plot(range(1000), item, label="neurons={}".format(value))
-    plt.xlabel('iterations')
-    plt.ylabel('cross-entropy')
-    plt.title('training cost')
-    plt.legend()
-    plt.savefig(os.path.join(CUR_DIR, 'p1a_sample_cost.png'))
+    # plot for cost/iterations
+    if plot_cost:
+        plt.figure()
+        for item, value in zip(cost_args, search_space):
+            plt.plot(range(EPOCHS), item, label="{}={}".format(param, value))
+        plt.xlabel('iterations')
+        plt.ylabel('cross-entropy')
+        plt.title('training cost')
+        plt.legend()
+        plt.savefig(os.path.join(CUR_DIR, 'p1a_sample_cost.png'))
 
-    plt.figure()
-    for item, value in zip(accuracy_args, search_space):
-        plt.plot(range(1000), item, label="neurons={}".format(value))
-    plt.xlabel('iterations')
-    plt.ylabel('accuracy')
-    plt.title('test accuracy')
-    plt.legend()
-    plt.savefig(os.path.join(CUR_DIR, 'p1a_sample_accuracy.png'))
+    # plot for accuracy/iterations
+    if plot_acc:
+        plt.figure()
+        for item, value in zip(accuracy_args, search_space):
+            plt.plot(range(EPOCHS), item, label="{}={}".format(param, value))
+        plt.xlabel('iterations')
+        plt.ylabel('accuracy')
+        plt.title('test accuracy')
+        plt.legend()
+        plt.savefig(os.path.join(CUR_DIR, 'p1a_sample_accuracy.png'))
 
-    plt.figure()
-    plt.plot(search_space, average_times, 'bx-')
-    plt.xlabel('batch size')
-    plt.ylabel('time to update in microseconds')
-    plt.title('update time vs batch size')
-    plt.savefig(os.path.join(CUR_DIR, 'p1a_sample_times.png'))
+    # plot for time/param
+    if plot_time:
+        plt.figure()
+        plt.plot(search_space, average_times, 'bx-')
+        plt.xlabel(param)
+        plt.ylabel('time to update in microseconds')
+        plt.title('update time vs {}'.format(param))
+        plt.savefig(os.path.join(CUR_DIR, 'p1a_sample_times.png'))
 
-    # forced garbage collection test
-    train_cost = []
-    test_accuracy = []
-    cost_args = []
-    accuracy_args = []
+    # plot for accuracy/param
+    if plot_max_acc:
+        plt.figure()
+        plt.plot(range(len(accuracy_args)), [
+            np.max(i) for i in accuracy_args], 'bx-')
+        plt.gca().xaxis.set_ticks(range(len(accuracy_args)))
+        plt.gca().xaxis.set_ticklabels(search_space)
+        plt.xlabel(param)
+        plt.ylabel('accuracy in %')
+        plt.title('accuracy vs {}'.format(param))
+        plt.savefig(os.path.join(CUR_DIR, 'p1a_{}_accuracy.png'.format(param)))
 
     plt.show()
+
+
+if __name__ == '__main__':
+    # Q2
+    # search('batch_size', [4, 8, 16, 32, 64])
+
+    # Q3
+    # search('hl_neuron', [5, 10, 15, 20, 25])
+
+    # Q4
+    # search('decay', [0, 1e-12, 1e-9, 1e-6, 1e-3],
+    #        plot_acc=False, plot_time=False, plot_max_acc=True)
+
+    exit()
