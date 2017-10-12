@@ -2,3 +2,6 @@
 
 project_1a/*.png
 project_1b/*.png
+
+__pycache__/
+*.py[cod]
