@@ -154,7 +154,7 @@ if __name__ == '__main__':
     # search('batch_size', [4, 8, 16, 32, 64])
 
     # Q3
-    # search('hl_neuron', [5, 10, 15, 20, 25])
+    search('hl_neuron', [5, 10, 15, 20, 25])
 
     # Q4
     # search('decay', [0, 1e-12, 1e-9, 1e-6, 1e-3],
