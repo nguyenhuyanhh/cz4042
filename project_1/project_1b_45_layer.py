@@ -56,7 +56,7 @@ def load_train_test():
     return train_x, train_y, test_x, test_y
 
 
-def main(train_x, train_y, test_x, test_y, no_hidden=30, learning_rate=1e-4):
+def train_test(train_x, train_y, test_x, test_y, no_hidden=30, learning_rate=1e-4):
     """Entry point for module."""
     no_features = train_x.shape[1]
     x_mat = T.matrix('x')  # data sample
@@ -177,7 +177,7 @@ def cross_validation(train_x, train_y, fold=5, no_hidden=30, learning_rate=1e-4)
         tmp_y = np.vstack((train_y[:start], train_y[end:]))
         test_x, test_y = train_x[start:end], train_y[start:end]
         nn_args = {'no_hidden': no_hidden, 'learning_rate': learning_rate}
-        train_cost, test_cost, _ = main(
+        train_cost, test_cost, _ = train_test(
             tmp_x, tmp_y, test_x, test_y, **nn_args)
         train_errors += [train_cost]
         validation_errors += [test_cost]
@@ -197,7 +197,7 @@ if __name__ == '__main__':
 # train_cost, test_cost = cross_validation(train_x, train_y, no_hidden=no_hidden)
 ##        train_args += [train_cost]
 ##        validation_args += [test_cost]
-    train_cost, test_cost, _ = main(
+    train_cost, test_cost, _ = train_test(
         train_x, train_y, test_x, test_y, no_hidden=60)
     with open("5_layer.pkl", 'wb+') as saveFile:
         pickle.dump(test_cost, saveFile)

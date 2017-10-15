@@ -55,8 +55,8 @@ def load_train_test():
     return train_x, train_y, test_x, test_y
 
 
-def main(train_x, train_y, test_x, test_y, no_hidden=30, learning_rate=1e-4):
-    """Entry point for module."""
+def train_test(train_x, train_y, test_x, test_y, no_hidden=30, learning_rate=1e-4):
+    """Train and test the neural network."""
     no_features = train_x.shape[1]
     x_mat = T.matrix('x')  # data sample
     d_mat = T.matrix('d')  # desired output
@@ -152,7 +152,7 @@ def cross_validation(train_x, train_y, fold=5, no_hidden=30, learning_rate=1e-4)
         test_x, test_y = train_x[start:end], train_y[start:end]
         nn_args = {'no_hidden': no_hidden, 'learning_rate': learning_rate}
         # train and test
-        train_cost, test_cost, _ = main(
+        train_cost, test_cost, _ = train_test(
             tmp_x, tmp_y, test_x, test_y, **nn_args)
         train_errors += [train_cost]
         validation_errors += [test_cost]
@@ -172,7 +172,7 @@ def search(param, search_space, plot_train=True, plot_vald=True, plot_test=False
             train_cost, test_cost = cross_validation(
                 train_x, train_y, **nn_args)
         elif plot_test:  # test only
-            train_cost, test_cost, _ = main(
+            train_cost, test_cost, _ = train_test(
                 train_x, train_y, test_x, test_y, **nn_args)
         train_args += [train_cost]
         validation_args += [test_cost]
