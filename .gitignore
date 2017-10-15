@@ -1,7 +1,6 @@
 .vscode/
 
-project_1a/*.png
-project_1b/*.png
+project_1/*.png
 
 __pycache__/
 *.py[cod]

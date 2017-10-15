@@ -34,6 +34,11 @@ def scale(x_raw, x_min, x_max):
     return (x_raw - x_min) / (x_max - x_min)
 
 
+def normalize(x_raw, x_mean, x_std):
+    """Normalize the data."""
+    return (x_raw - x_mean) / x_std
+
+
 def sgd(cost, params, learning_rate=0.01):
     """Update parameters."""
     grads = T.grad(cost=cost, wrt=params)
