@@ -45,15 +45,29 @@ function to a high degree of accuracy, given enough training data.
 
 \section*{Experiments}
 
+We implemented the neural network as a function \texttt{train\_test\,()}
+taking three optional parameters: 
+\texttt{batch\_size}, \texttt{hl\_neuron} (the hidden layer neuron count) and
+\texttt{decay}. Each experiment is performed by utilizing the search function
+\texttt{search\,()}, which takes two additional input, the search parameter
+(either \texttt{batch\_size}, \texttt{hl\_neuron} or \texttt{decay}) and the
+search space associated with it. The function would loop through the possible
+values of the parameter, and train and test the neural network accordingly;
+graphs are stored and displayed after each experiment.
+
 \subsection*{Experiment 1: Determining the optimal batch size (Question 2)}
 
-Plotting the training errors against the number of epochs for different batch sizes:
+The parameter \texttt{batch\_size} is varied in the search space
+\([4,8,16,32,64]\).
+Plotting the training errors against the number of epochs for different
+batch sizes:
 
 \begin{center}
     \includegraphics[width=\imgw]{images/p1a2_batch_cost.png}   
 \end{center}
 
-Plotting the test accuracy against the number of epochs for different batch sizes:
+Plotting the test accuracy against the number of epochs for different
+batch sizes:
 
 \begin{center}
     \includegraphics[width=\imgw]{images/p1a2_batch_accuracy.png}   
@@ -70,6 +84,8 @@ We decided to choose batch size of 4, for the highest test accuracy.
 \subsection*{Experiment 2: Determining the optimal number of hidden neurons
 (Question 3)}
 
+The parameter \texttt{hl\_neuron} is varied in the search space
+\([5,10,15,20,25]\).
 Plotting the training errors against the number of epochs for different hidden
 neuron counts:
 
@@ -94,6 +110,8 @@ We decided to choose 10 hidden neurons, for the highest test accuracy.
 
 \subsection*{Experiment 3: Determining the optimal decay parameter (Question 4)}
 
+The parameter \texttt{decay} is varied in the search space
+\([0, 10^{-12}, 10^{-9}, 10^{-6}, 10^{-3}]\).
 Plotting the training errors against the number of epochs for different decay
 parameters:
 
@@ -101,14 +119,13 @@ parameters:
     \includegraphics[width=\imgw]{images/p1a4_decay_cost.png}   
 \end{center}
 
-Plotting the test accuracy against the number of epochs for different hidden
-neuron counts:
+Plotting the test accuracy against the decay parameters:
 
 \begin{center}
     \includegraphics[width=\imgw]{images/p1a4_decay_accuracy.png}   
 \end{center}
 
-We decided to choose decay parameter [placeholder]
+We decided to choose decay parameter \(10^{-9}\), for the highest accuracy.
 
 \subsection*{Experiment 4: The 4-layer neural network (Question 4)}
 
