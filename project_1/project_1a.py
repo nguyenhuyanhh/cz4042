@@ -21,6 +21,7 @@ except ImportError:  # py3 without itertools.izip
 
 # init path
 CUR_DIR = os.path.dirname(os.path.realpath(__file__))
+DATA_DIR = os.path.join(CUR_DIR, 'data_a')
 
 # number of epochs
 EPOCHS = 1000
@@ -30,7 +31,7 @@ def load_train_test():
     """Load training and testing data."""
     # train data
     train_input = np.loadtxt(os.path.join(
-        CUR_DIR, 'sat_train.txt'), delimiter=' ')
+        DATA_DIR, 'sat_train.txt'), delimiter=' ')
     train_x, train_y_tmp = train_input[:, :36], train_input[:, -1].astype(int)
     train_x_min, train_x_max = np.min(train_x, axis=0), np.max(train_x, axis=0)
     train_x = scale(train_x, train_x_min, train_x_max)
@@ -40,7 +41,7 @@ def load_train_test():
 
     # test data
     test_input = np.loadtxt(os.path.join(
-        CUR_DIR, 'sat_test.txt'), delimiter=' ')
+        DATA_DIR, 'sat_test.txt'), delimiter=' ')
     test_x, test_y_tmp = test_input[:, :36], test_input[:, -1].astype(int)
     test_x_min, test_x_max = np.min(test_x, axis=0), np.max(test_x, axis=0)
     test_x = scale(test_x, test_x_min, test_x_max)
