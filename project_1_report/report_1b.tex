@@ -48,8 +48,8 @@ neural networks perform similarly well on regression problems.
 
 \section*{Experiments}
 
-We implemented the neural network as two functions \texttt{train\_test\,()}
-and \texttt{cross\_validation\,()}, each
+We implemented the neural network as two functions
+\texttt{nn\_3\_layer\,()} and \texttt{cross\_validation\,()}, each
 taking two optional parameters: \texttt{learning\_rate} and
 \texttt{no\_hidden} (the hidden layer neuron count).
 Each experiment is performed by utilizing the search function
@@ -118,6 +118,9 @@ number of hidden neurons:
 \end{center}
 
 \subsection*{Experiment 4: The 4-layer and 5-layer neural network (Question 4)}
+
+The 4- and 5-layer networks are implemented in \texttt{nn\_4\_layer\,()}
+and \texttt{nn\_5\_layer\,()}, accordingly.
 
 Plotting the test errors against the number of epochs for the 4-layer
 network:

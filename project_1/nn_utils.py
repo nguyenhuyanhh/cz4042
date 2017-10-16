@@ -1,4 +1,4 @@
-"""Utils for Project 1a: Classification."""
+"""Utils for project."""
 
 import numpy as np
 import theano
