@@ -44,15 +44,14 @@ def model(X, w1, b1, w2, b2, w3, b3, w4, b4):
     y1 = T.nnet.relu(conv2d(X, w1) + b1.dimshuffle('x', 0, 'x', 'x'))
     pool_dim = (2, 2)
     o1 = pool.pool_2d(y1, pool_dim)
-    o2 = T.flatten(o1, outdim=4)
 
     # conv + pool layers C2, S2
-    y2 = T.nnet.relu(conv2d(o2, w2) + b2.dimshuffle('x', 0, 'x', 'x'))
-    o3 = pool.pool_2d(y2, pool_dim)
-    o4 = T.flatten(o3, outdim=2)
+    y2 = T.nnet.relu(conv2d(o1, w2) + b2.dimshuffle('x', 0, 'x', 'x'))
+    o2 = pool.pool_2d(y2, pool_dim)
+    o3 = T.flatten(o2, outdim=2)
 
     # fully connected layer F3
-    y3 = T.nnet.sigmoid(T.dot(o4, w3) + b3)
+    y3 = T.nnet.sigmoid(T.dot(o3, w3) + b3)
 
     # softmax F4, output layer
     pyx = T.nnet.softmax(T.dot(y3, w4) + b4)
@@ -90,7 +89,7 @@ def main():
 
     # conv layer C2, 20 5x5 window filters
     weight_2, bias_2 = init_weights_bias4(
-        (20, 1, 5, 5), x_tensor.dtype)
+        (20, 15, 5, 5), x_tensor.dtype)
     
     # fully connected layer F3, 100 neurons
     weight_3, bias_3 = init_weights_bias2(
@@ -150,7 +149,7 @@ def main():
     w = weight_1.get_value()
     pylab.figure()
     pylab.gray()
-    for i in range(25):
+    for i in range(15):
         pylab.subplot(5, 5, i + 1)
         pylab.axis('off')
         pylab.imshow(w[i, :, :, :].reshape(9, 9))
@@ -169,7 +168,7 @@ def main():
 
     pylab.figure()
     pylab.gray()
-    for i in range(25):
+    for i in range(15):
         pylab.subplot(5, 5, i + 1)
         pylab.axis('off')
         pylab.imshow(convolved[0, i, :].reshape(20, 20))
@@ -181,7 +180,7 @@ def main():
     for i in range(5):
         pylab.subplot(5, 5, i + 1)
         pylab.axis('off')
-        pylab.imshow(pooled[0, i, :].reshape(5, 5))
+        pylab.imshow(pooled[0, i, :].reshape(10, 10))
     pylab.title('pooled feature maps')
     pylab.savefig('figure_2a_pooled_features.png')
 
