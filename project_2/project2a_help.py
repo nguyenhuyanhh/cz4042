@@ -1,4 +1,8 @@
-from __future__ import print_function, division
+"""Project 2a: Deep CNN."""
+
+from __future__ import division, print_function
+
+import os
 
 import numpy as np
 import pylab
@@ -15,17 +19,23 @@ try:
 except ImportError:  # py3 without itertools.izip
     pass
 
-# 1 convolution layer, 1 max pooling layer and a softmax layer
-
+CUR_DIR = os.path.dirname(os.path.realpath(__file__))
 np.random.seed(10)
 BATCH_SIZE = 128
 NO_ITERS = 100
 
 
-def init_weights_bias4(filter_shape, d_type):
+def init_weights_bias_4d(filter_shape, d_type):
+    """Initialize weights and bias for a 4D tensor.
+
+    Arguments:
+        filter_shape: 4-tuple of the form (num_filters, input_channels, height, width)
+        d_type: dtype of tensor
+    Return:
+        weight, bias as theano.shared()
+    """
     fan_in = np.prod(filter_shape[1:])
     fan_out = filter_shape[0] * np.prod(filter_shape[2:])
-
     bound = np.sqrt(6. / (fan_in + fan_out))
     w_values = np.asarray(
         np.random.uniform(low=-bound, high=bound, size=filter_shape),
@@ -34,10 +44,17 @@ def init_weights_bias4(filter_shape, d_type):
     return theano.shared(w_values, borrow=True), theano.shared(b_values, borrow=True)
 
 
-def init_weights_bias2(filter_shape, d_type):
+def init_weights_bias_2d(filter_shape, d_type):
+    """Initialize weights and bias for a 4D tensor.
+
+    Arguments:
+        filter_shape: 2-tuple of the form (input_size, output_size)
+        d_type: dtype of tensor
+    Return:
+        weight, bias as theano.shared()
+    """
     fan_in = filter_shape[1]
     fan_out = filter_shape[0]
-
     bound = np.sqrt(6. / (fan_in + fan_out))
     w_values = np.asarray(
         np.random.uniform(low=-bound, high=bound, size=filter_shape),
@@ -46,23 +63,31 @@ def init_weights_bias2(filter_shape, d_type):
     return theano.shared(w_values, borrow=True), theano.shared(b_values, borrow=True)
 
 
-def model(X, w1, b1, w2, b2, w3, b3, w4, b4):
+def model(x_ts, w_1, b_1, w_2, b_2, w_3, b_3, w_4, b_4):
+    """The implemented deep CNN of 2 convolutional layers, 2 pooling layers,
+    1 fully connected layer and 1 output softmax layer.
+
+    Arguments:
+        x_ts: 4D tensor holding the data
+        w_*, b_*: weights and biases for each layer
+    """
     # conv + pool layers C1, S1
-    y1 = T.nnet.relu(conv2d(X, w1) + b1.dimshuffle('x', 0, 'x', 'x'))
+    y_1 = T.nnet.relu(conv2d(x_ts, w_1) +
+                      b_1.dimshuffle('x', 0, 'x', 'x'))
     pool_dim = (2, 2)
-    o1 = pool.pool_2d(y1, pool_dim, ignore_border=True)
+    o_1 = pool.pool_2d(y_1, pool_dim, ignore_border=True)
 
     # conv + pool layers C2, S2
-    y2 = T.nnet.relu(conv2d(o1, w2) + b2.dimshuffle('x', 0, 'x', 'x'))
-    o2 = pool.pool_2d(y2, pool_dim, ignore_border=True)
-    o3 = T.flatten(o2, outdim=2)
+    y_2 = T.nnet.relu(conv2d(o_1, w_2) + b_2.dimshuffle('x', 0, 'x', 'x'))
+    o_2 = pool.pool_2d(y_2, pool_dim, ignore_border=True)
+    o_3 = T.flatten(o_2, outdim=2)
 
     # fully connected layer F3
-    y3 = T.nnet.sigmoid(T.dot(o3, w3) + b3)
+    y_3 = T.nnet.sigmoid(T.dot(o_3, w_3) + b_3)
 
     # softmax F4, output layer
-    pyx = T.nnet.softmax(T.dot(y3, w4) + b4)
-    return y1, o1, pyx
+    pyx = T.nnet.softmax(T.dot(y_3, w_4) + b_4)
+    return y_1, o_1, pyx
 
 
 def sgd(cost, params, learning_rate=0.05, decay=0.0001):
@@ -101,6 +126,7 @@ def rms_prop(cost, params, learning_rate=0.001, decay=0.0001, rho=0.9, epsilon=1
 
 
 def shuffle_data(samples, labels):
+    """Shuffle the data."""
     idx = np.arange(samples.shape[0])
     np.random.shuffle(idx)
     samples, labels = samples[idx], labels[idx]
@@ -108,6 +134,7 @@ def shuffle_data(samples, labels):
 
 
 def main():
+    """Entry point for script."""
     train_x, test_x, train_y, test_y = mnist(onehot=True)
     train_x = train_x.reshape(-1, 1, 28, 28)
     test_x = test_x.reshape(-1, 1, 28, 28)
@@ -119,21 +146,21 @@ def main():
     y_mat = T.matrix('Y')
 
     # conv layer C1, 15 9x9 window filters
-    weight_1, bias_1 = init_weights_bias4(
+    weight_1, bias_1 = init_weights_bias_4d(
         (15, 1, 9, 9), x_tensor.dtype)
 
     # conv layer C2, 20 5x5 window filters
-    weight_2, bias_2 = init_weights_bias4(
+    weight_2, bias_2 = init_weights_bias_4d(
         (20, 15, 5, 5), x_tensor.dtype)
-    
+
     # fully connected layer F3, 100 neurons
-    weight_3, bias_3 = init_weights_bias2(
+    weight_3, bias_3 = init_weights_bias_2d(
         (20 * 3 * 3, 100), x_tensor.dtype)
 
     # softmax output layer, 10 neurons
-    weight_4, bias_4 = init_weights_bias2(
+    weight_4, bias_4 = init_weights_bias_2d(
         (100, 10), x_tensor.dtype)
-    
+
     y_1, o_1, py_x = model(x_tensor,
                            weight_1, bias_1,
                            weight_2, bias_2,
@@ -161,7 +188,9 @@ def main():
         cost = 0.0
         train_length = len(train_x)
 
-        for start, end in zip(range(0, train_length, BATCH_SIZE), range(BATCH_SIZE, train_length, BATCH_SIZE)):
+        starts = range(0, train_length, BATCH_SIZE)
+        ends = range(BATCH_SIZE, train_length, BATCH_SIZE)
+        for start, end in zip(starts, ends):
             cost += train(train_x[start:end], train_y[start:end])
 
         # average out the cost for one epoch
@@ -177,23 +206,23 @@ def main():
     pylab.plot(range(NO_ITERS), test_accr)
     pylab.xlabel('epochs')
     pylab.ylabel('test accuracy')
-    pylab.savefig('figure_2a_test.png')
+    pylab.savefig(os.path.join(CUR_DIR, 'figure_2a_test.png'))
 
     pylab.figure()
     pylab.plot(range(NO_ITERS), train_cost)
     pylab.xlabel('epochs')
     pylab.ylabel('training cost')
-    pylab.savefig('figure_2a_train.png')
+    pylab.savefig(os.path.join(CUR_DIR, 'figure_2a_train.png'))
 
-    w = weight_1.get_value()
+    w_1 = weight_1.get_value()
     pylab.figure()
     pylab.gray()
     for i in range(15):
         pylab.subplot(5, 5, i + 1)
         pylab.axis('off')
-        pylab.imshow(w[i, :, :, :].reshape(9, 9))
+        pylab.imshow(w_1[i, :, :, :].reshape(9, 9))
     pylab.suptitle('filters learned')
-    pylab.savefig('figure_2a_filters.png')
+    pylab.savefig(os.path.join(CUR_DIR, 'figure_2a_filters.png'))
 
     ind = np.random.randint(low=0, high=2000)
     convolved, pooled = test(test_x[ind:ind + 1, :])
@@ -203,7 +232,7 @@ def main():
     pylab.axis('off')
     pylab.imshow(test_x[ind, :].reshape(28, 28))
     pylab.title('input image')
-    pylab.savefig('figure_2a_input_img.png')
+    pylab.savefig(os.path.join(CUR_DIR, 'figure_2a_input_img.png'))
 
     pylab.figure()
     pylab.gray()
@@ -212,7 +241,7 @@ def main():
         pylab.axis('off')
         pylab.imshow(convolved[0, i, :].reshape(20, 20))
     pylab.suptitle('convolved feature maps')
-    pylab.savefig('figure_2a_conv_features.png')
+    pylab.savefig(os.path.join(CUR_DIR, 'figure_2a_conv_features.png'))
 
     pylab.figure()
     pylab.gray()
@@ -221,7 +250,7 @@ def main():
         pylab.axis('off')
         pylab.imshow(pooled[0, i, :].reshape(10, 10))
     pylab.suptitle('pooled feature maps')
-    pylab.savefig('figure_2a_pooled_features.png')
+    pylab.savefig(os.path.join(CUR_DIR, 'figure_2a_pooled_features.png'))
     pylab.show()
 
 
