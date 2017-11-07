@@ -1,3 +1,5 @@
+from __future__ import print_function, division
+
 import numpy as np
 import pylab
 import theano
@@ -7,6 +9,11 @@ from theano.tensor.signal import pool
 from tqdm import tqdm
 
 from load import mnist
+
+try:
+    from itertools import izip as zip
+except ImportError:  # py3 without itertools.izip
+    pass
 
 # 1 convolution layer, 1 max pooling layer and a softmax layer
 
@@ -97,6 +104,7 @@ def main():
     test_x = test_x.reshape(-1, 1, 28, 28)
     train_x, train_y = train_x[:12000], train_y[:12000]
     test_x, test_y = test_x[:2000], test_y[:2000]
+    print('finished loading data')
 
     x_tensor = T.tensor4('X')
     y_mat = T.matrix('Y')
@@ -119,7 +127,7 @@ def main():
     test = theano.function(inputs=[x_tensor], outputs=[
         y_1, o_1], allow_input_downcast=True)
 
-    a = []
+    test_accr = []
     train_cost = []
 
     for i in tqdm(range(NO_ITERS)):
@@ -134,10 +142,14 @@ def main():
         # average out the cost for one epoch
         cost = cost / (train_length // BATCH_SIZE)
         train_cost += [cost]
-        a.append(np.mean(np.argmax(test_y, axis=1) == predict(test_x)))
+        test_accr.append(
+            np.mean(np.argmax(test_y, axis=1) == predict(test_x)))
+
+    print('%.1f accuracy at %d iterations' %
+          (np.max(test_accr) * 100, np.argmax(test_accr) + 1))
 
     pylab.figure()
-    pylab.plot(range(NO_ITERS), a)
+    pylab.plot(range(NO_ITERS), test_accr)
     pylab.xlabel('epochs')
     pylab.ylabel('test accuracy')
     pylab.savefig('figure_2a_test.png')
