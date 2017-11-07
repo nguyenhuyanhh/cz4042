@@ -1,3 +1,5 @@
+from __future__ import print_function, division
+
 import numpy as np
 import pylab
 import theano
@@ -8,11 +10,16 @@ from tqdm import tqdm
 
 from load import mnist
 
+try:
+    from itertools import izip as zip
+except ImportError:  # py3 without itertools.izip
+    pass
+
 # 1 convolution layer, 1 max pooling layer and a softmax layer
 
 np.random.seed(10)
 BATCH_SIZE = 128
-NO_ITERS = 25
+NO_ITERS = 100
 
 
 def init_weights_bias4(filter_shape, d_type):
@@ -49,11 +56,38 @@ def model(X, w1, b1, w2, b2):
     return y1, o1, pyx
 
 
-def sgd(cost, params, lr=0.05, decay=0.0001):
+def sgd(cost, params, learning_rate=0.05, decay=0.0001):
+    """Stochastic Gradient Descent function."""
     grads = T.grad(cost=cost, wrt=params)
     updates = []
-    for p, g in zip(params, grads):
-        updates.append([p, p - (g + decay * p) * lr])
+    for param, grad in zip(params, grads):
+        updates.append([param, param - (grad + decay * param) * learning_rate])
+    return updates
+
+
+def sgd_momentum(cost, params, learning_rate=0.05, decay=0.0001, momentum=0.5):
+    """Stochastic Gradient Descent with momentum."""
+    grads = T.grad(cost=cost, wrt=params)
+    updates = []
+    for param, grad in zip(params, grads):
+        vel = theano.shared(param.get_value() * 0.)
+        vel_new = momentum * vel - (grad + decay * param) * learning_rate
+        updates.append([param, param + vel_new])
+        updates.append([vel, vel_new])
+    return updates
+
+
+def rms_prop(cost, params, learning_rate=0.001, decay=0.0001, rho=0.9, epsilon=1e-6):
+    """RMSProp algorithm."""
+    grads = T.grad(cost=cost, wrt=params)
+    updates = []
+    for param, grad in zip(params, grads):
+        acc = theano.shared(param.get_value() * 0.)
+        acc_new = rho * acc + (1 - rho) * grad ** 2
+        grad_scaling = T.sqrt(acc_new + epsilon)
+        grad = grad / grad_scaling
+        updates.append((acc, acc_new))
+        updates.append((param, param - learning_rate * (grad + decay * param)))
     return updates
 
 
@@ -70,6 +104,7 @@ def main():
     test_x = test_x.reshape(-1, 1, 28, 28)
     train_x, train_y = train_x[:12000], train_y[:12000]
     test_x, test_y = test_x[:2000], test_y[:2000]
+    print('finished loading data')
 
     x_tensor = T.tensor4('X')
     y_mat = T.matrix('Y')
@@ -84,7 +119,7 @@ def main():
 
     cost = T.mean(T.nnet.categorical_crossentropy(py_x, y_mat))
     params = [weight_1, bias_1, weight_2, bias_2]
-    updates = sgd(cost, params, lr=0.05)
+    updates = sgd(cost, params, learning_rate=0.05)
     train = theano.function(
         inputs=[x_tensor, y_mat], outputs=cost, updates=updates, allow_input_downcast=True)
     predict = theano.function(
@@ -92,7 +127,7 @@ def main():
     test = theano.function(inputs=[x_tensor], outputs=[
         y_1, o_1], allow_input_downcast=True)
 
-    a = []
+    test_accr = []
     train_cost = []
 
     for i in tqdm(range(NO_ITERS)):
@@ -107,10 +142,14 @@ def main():
         # average out the cost for one epoch
         cost = cost / (train_length // BATCH_SIZE)
         train_cost += [cost]
-        a.append(np.mean(np.argmax(test_y, axis=1) == predict(test_x)))
+        test_accr.append(
+            np.mean(np.argmax(test_y, axis=1) == predict(test_x)))
+
+    print('%.1f accuracy at %d iterations' %
+          (np.max(test_accr) * 100, np.argmax(test_accr) + 1))
 
     pylab.figure()
-    pylab.plot(range(NO_ITERS), a)
+    pylab.plot(range(NO_ITERS), test_accr)
     pylab.xlabel('epochs')
     pylab.ylabel('test accuracy')
     pylab.savefig('figure_2a_test.png')
@@ -128,7 +167,7 @@ def main():
         pylab.subplot(5, 5, i + 1)
         pylab.axis('off')
         pylab.imshow(w[i, :, :, :].reshape(9, 9))
-    pylab.title('filters learned')
+    pylab.suptitle('filters learned')
     pylab.savefig('figure_2a_filters.png')
 
     ind = np.random.randint(low=0, high=2000)
@@ -147,7 +186,7 @@ def main():
         pylab.subplot(5, 5, i + 1)
         pylab.axis('off')
         pylab.imshow(convolved[0, i, :].reshape(20, 20))
-    pylab.title('convolved feature maps')
+    pylab.suptitle('convolved feature maps')
     pylab.savefig('figure_2a_conv_features.png')
 
     pylab.figure()
@@ -156,9 +195,8 @@ def main():
         pylab.subplot(5, 5, i + 1)
         pylab.axis('off')
         pylab.imshow(pooled[0, i, :].reshape(5, 5))
-    pylab.title('pooled feature maps')
+    pylab.suptitle('pooled feature maps')
     pylab.savefig('figure_2a_pooled_features.png')
-
     pylab.show()
 
 
