@@ -49,11 +49,38 @@ def model(X, w1, b1, w2, b2):
     return y1, o1, pyx
 
 
-def sgd(cost, params, lr=0.05, decay=0.0001):
+def sgd(cost, params, learning_rate=0.05, decay=0.0001):
+    """Stochastic Gradient Descent function."""
     grads = T.grad(cost=cost, wrt=params)
     updates = []
-    for p, g in zip(params, grads):
-        updates.append([p, p - (g + decay * p) * lr])
+    for param, grad in zip(params, grads):
+        updates.append([param, param - (grad + decay * param) * learning_rate])
+    return updates
+
+
+def sgd_momentum(cost, params, learning_rate=0.05, decay=0.0001, momentum=0.5):
+    """Stochastic Gradient Descent with momentum."""
+    grads = T.grad(cost=cost, wrt=params)
+    updates = []
+    for param, grad in zip(params, grads):
+        vel = theano.shared(param.get_value() * 0.)
+        vel_new = momentum * vel - (grad + decay * param) * learning_rate
+        updates.append([param, param + vel_new])
+        updates.append([vel, vel_new])
+    return updates
+
+
+def rms_prop(cost, params, learning_rate=0.001, decay=0.0001, rho=0.9, epsilon=1e-6):
+    """RMSProp algorithm."""
+    grads = T.grad(cost=cost, wrt=params)
+    updates = []
+    for param, grad in zip(params, grads):
+        acc = theano.shared(param.get_value() * 0.)
+        acc_new = rho * acc + (1 - rho) * grad ** 2
+        grad_scaling = T.sqrt(acc_new + epsilon)
+        grad = grad / grad_scaling
+        updates.append((acc, acc_new))
+        updates.append((param, param - learning_rate * (grad + decay * param)))
     return updates
 
 
@@ -84,7 +111,7 @@ def main():
 
     cost = T.mean(T.nnet.categorical_crossentropy(py_x, y_mat))
     params = [weight_1, bias_1, weight_2, bias_2]
-    updates = sgd(cost, params, lr=0.05)
+    updates = sgd(cost, params, learning_rate=0.05)
     train = theano.function(
         inputs=[x_tensor, y_mat], outputs=cost, updates=updates, allow_input_downcast=True)
     predict = theano.function(
