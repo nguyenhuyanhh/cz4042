@@ -19,7 +19,7 @@ except ImportError:  # py3 without itertools.izip
 
 np.random.seed(10)
 BATCH_SIZE = 128
-NO_ITERS = 25
+NO_ITERS = 100
 
 
 def init_weights_bias4(filter_shape, d_type):
