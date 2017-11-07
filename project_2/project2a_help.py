@@ -155,7 +155,7 @@ def main():
         pylab.subplot(5, 5, i + 1)
         pylab.axis('off')
         pylab.imshow(w[i, :, :, :].reshape(9, 9))
-    pylab.title('filters learned')
+    pylab.suptitle('filters learned')
     pylab.savefig('figure_2a_filters.png')
 
     ind = np.random.randint(low=0, high=2000)
@@ -174,7 +174,7 @@ def main():
         pylab.subplot(5, 5, i + 1)
         pylab.axis('off')
         pylab.imshow(convolved[0, i, :].reshape(20, 20))
-    pylab.title('convolved feature maps')
+    pylab.suptitle('convolved feature maps')
     pylab.savefig('figure_2a_conv_features.png')
 
     pylab.figure()
@@ -183,9 +183,8 @@ def main():
         pylab.subplot(5, 5, i + 1)
         pylab.axis('off')
         pylab.imshow(pooled[0, i, :].reshape(5, 5))
-    pylab.title('pooled feature maps')
+    pylab.suptitle('pooled feature maps')
     pylab.savefig('figure_2a_pooled_features.png')
-
     pylab.show()
 
 
