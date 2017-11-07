@@ -1,51 +1,55 @@
+"""Helper library to load MNIST data."""
+
 import os
 
 import numpy as np
 
-datasets_dir = '../data/'
+CUR_DIR = os.path.dirname(os.path.realpath(__file__))
+DATA_DIR = os.path.join(CUR_DIR, 'data/')
 
 
-def one_hot(x, n):
-    if type(x) == list:
-        x = np.array(x)
-    x = x.flatten()
-    o_h = np.zeros((len(x), n))
-    o_h[np.arange(len(x)), x] = 1
+def one_hot(x_arr, n):
+    """Generate one-hot vectors of data."""
+    if x_arr.isinstance(list):
+        x_arr = np.array(x_arr)
+    x_arr = x_arr.flatten()
+    o_h = np.zeros((len(x_arr), n))
+    o_h[np.arange(len(x_arr)), x_arr] = 1
     return o_h
 
 
 def mnist(ntrain=60000, ntest=10000, onehot=True):
-    data_dir = os.path.join(datasets_dir, 'mnist/')
-    fd = open(os.path.join(data_dir, 'train-images-idx3-ubyte'))
-    loaded = np.fromfile(file=fd, dtype=np.uint8)
-    trX = loaded[16:].reshape((60000, 28 * 28)).astype(float)
+    """Load MNIST data."""
+    file_ = open(os.path.join(DATA_DIR, 'train-images-idx3-ubyte'))
+    loaded = np.fromfile(file=file_, dtype=np.uint8)
+    train_x = loaded[16:].reshape((60000, 28 * 28)).astype(float)
 
-    fd = open(os.path.join(data_dir, 'train-labels-idx1-ubyte'))
-    loaded = np.fromfile(file=fd, dtype=np.uint8)
-    trY = loaded[8:].reshape((60000))
+    file_ = open(os.path.join(DATA_DIR, 'train-labels-idx1-ubyte'))
+    loaded = np.fromfile(file=file_, dtype=np.uint8)
+    train_y = loaded[8:].reshape((60000))
 
-    fd = open(os.path.join(data_dir, 't10k-images-idx3-ubyte'))
-    loaded = np.fromfile(file=fd, dtype=np.uint8)
-    teX = loaded[16:].reshape((10000, 28 * 28)).astype(float)
+    file_ = open(os.path.join(DATA_DIR, 't10k-images-idx3-ubyte'))
+    loaded = np.fromfile(file=file_, dtype=np.uint8)
+    test_x = loaded[16:].reshape((10000, 28 * 28)).astype(float)
 
-    fd = open(os.path.join(data_dir, 't10k-labels-idx1-ubyte'))
-    loaded = np.fromfile(file=fd, dtype=np.uint8)
-    teY = loaded[8:].reshape((10000))
+    file_ = open(os.path.join(DATA_DIR, 't10k-labels-idx1-ubyte'))
+    loaded = np.fromfile(file=file_, dtype=np.uint8)
+    test_y = loaded[8:].reshape((10000))
 
-    trX = trX / 255.
-    teX = teX / 255.
+    train_x = train_x / 255.
+    test_x = test_x / 255.
 
-    trX = trX[:ntrain]
-    trY = trY[:ntrain]
+    train_x = train_x[:ntrain]
+    train_y = train_y[:ntrain]
 
-    teX = teX[:ntest]
-    teY = teY[:ntest]
+    test_x = test_x[:ntest]
+    test_y = test_y[:ntest]
 
     if onehot:
-        trY = one_hot(trY, 10)
-        teY = one_hot(teY, 10)
+        train_y = one_hot(train_y, 10)
+        test_y = one_hot(test_y, 10)
     else:
-        trY = np.asarray(trY)
-        teY = np.asarray(teY)
+        train_y = np.asarray(train_y)
+        test_y = np.asarray(test_y)
 
-    return trX, teX, trY, teY
+    return train_x, test_x, train_y, test_y
