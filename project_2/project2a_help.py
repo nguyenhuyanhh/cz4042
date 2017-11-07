@@ -97,11 +97,20 @@ def main():
                            y1, o1], allow_input_downcast=True)
 
     a = []
+    train_cost = []
+    
     for i in range(noIters):
         trX, trY = shuffle_data(trX, trY)
         teX, teY = shuffle_data(teX, teY)
-        for start, end in zip(range(0, len(trX), batch_size), range(batch_size, len(trX), batch_size)):
-            cost = train(trX[start:end], trY[start:end])
+        cost = 0.0
+        train_length = len(trX)
+        
+        for start, end in zip(range(0, train_length, batch_size), range(batch_size, train_length, batch_size)):
+            cost += train(trX[start:end], trY[start:end])
+
+        # average out the cost for one epoch
+        cost = cost / (train_length // batch_size)
+        train_cost += [cost]
         a.append(np.mean(np.argmax(teY, axis=1) == predict(teX)))
         print(a[i])
 
@@ -109,7 +118,13 @@ def main():
     pylab.plot(range(noIters), a)
     pylab.xlabel('epochs')
     pylab.ylabel('test accuracy')
-    pylab.savefig('figure_2a_1.png')
+    pylab.savefig('figure_2a_test.png')
+
+    pylab.figure()
+    pylab.plot(range(noIters), train_cost)
+    pylab.xlabel('epochs')
+    pylab.ylabel('training cost')
+    pylab.savefig('figure_2a_train.png')
 
     w = w1.get_value()
     pylab.figure()
@@ -118,7 +133,7 @@ def main():
         pylab.subplot(
             5, 5, i + 1); pylab.axis('off'); pylab.imshow(w[i, :, :, :].reshape(9, 9))
     #pylab.title('filters learned')
-    pylab.savefig('figure_2a_2.png')
+    pylab.savefig('figure_2a_filters.png')
 
     ind = np.random.randint(low=0, high=2000)
     convolved, pooled = test(teX[ind:ind + 1, :])
@@ -127,7 +142,7 @@ def main():
     pylab.gray()
     pylab.axis('off'); pylab.imshow(teX[ind, :].reshape(28, 28))
     #pylab.title('input image')
-    pylab.savefig('figure_2a_3.png')
+    pylab.savefig('figure_2a_input_img.png')
 
     pylab.figure()
     pylab.gray()
@@ -135,7 +150,7 @@ def main():
         pylab.subplot(
             5, 5, i + 1); pylab.axis('off'); pylab.imshow(convolved[0, i, :].reshape(20, 20))
     #pylab.title('convolved feature maps')
-    pylab.savefig('figure_2a_4.png')
+    pylab.savefig('figure_2a_conv_features.png')
 
     pylab.figure()
     pylab.gray()
@@ -143,7 +158,7 @@ def main():
         pylab.subplot(
             5, 5, i + 1); pylab.axis('off'); pylab.imshow(pooled[0, i, :].reshape(5, 5))
     #pylab.title('pooled feature maps')
-    pylab.savefig('figure_2a_5.png')
+    pylab.savefig('figure_2a_pooled_features.png')
 
     pylab.show()
 
