@@ -39,13 +39,23 @@ def init_weights_bias2(filter_shape, d_type):
     return theano.shared(w_values, borrow=True), theano.shared(b_values, borrow=True)
 
 
-def model(X, w1, b1, w2, b2):
+def model(X, w1, b1, w2, b2, w3, b3, w4, b4):
+    # conv + pool layers C1, S1
     y1 = T.nnet.relu(conv2d(X, w1) + b1.dimshuffle('x', 0, 'x', 'x'))
-    pool_dim = (4, 4)
+    pool_dim = (2, 2)
     o1 = pool.pool_2d(y1, pool_dim)
-    o2 = T.flatten(o1, outdim=2)
+    o2 = T.flatten(o1, outdim=4)
 
-    pyx = T.nnet.softmax(T.dot(o2, w2) + b2)
+    # conv + pool layers C2, S2
+    y2 = T.nnet.relu(conv2d(o2, w2) + b2.dimshuffle('x', 0, 'x', 'x'))
+    o3 = pool.pool_2d(y2, pool_dim)
+    o4 = T.flatten(o3, outdim=2)
+
+    # fully connected layer F3
+    y3 = T.nnet.sigmoid(T.dot(o4, w3) + b3)
+
+    # softmax F4, output layer
+    pyx = T.nnet.softmax(T.dot(y3, w4) + b4)
     return y1, o1, pyx
 
 
@@ -74,16 +84,32 @@ def main():
     x_tensor = T.tensor4('X')
     y_mat = T.matrix('Y')
 
-    num_filters = 25
+    # conv layer C1, 15 9x9 window filters
     weight_1, bias_1 = init_weights_bias4(
-        (num_filters, 1, 9, 9), x_tensor.dtype)
-    weight_2, bias_2 = init_weights_bias2(
-        (num_filters * 5 * 5, 10), x_tensor.dtype)
-    y_1, o_1, py_x = model(x_tensor, weight_1, bias_1, weight_2, bias_2)
+        (15, 1, 9, 9), x_tensor.dtype)
+
+    # conv layer C2, 20 5x5 window filters
+    weight_2, bias_2 = init_weights_bias4(
+        (20, 1, 5, 5), x_tensor.dtype)
+    
+    # fully connected layer F3, 100 neurons
+    weight_3, bias_3 = init_weights_bias2(
+        (20 * 3 * 3, 100), x_tensor.dtype)
+
+    # softmax output layer, 10 neurons
+    weight_4, bias_4 = init_weights_bias2(
+        (100, 10), x_tensor.dtype)
+    
+    y_1, o_1, py_x = model(x_tensor,
+                           weight_1, bias_1,
+                           weight_2, bias_2,
+                           weight_3, bias_3,
+                           weight_4, bias_4)
     y_x = T.argmax(py_x, axis=1)
 
     cost = T.mean(T.nnet.categorical_crossentropy(py_x, y_mat))
-    params = [weight_1, bias_1, weight_2, bias_2]
+    params = [weight_1, bias_1, weight_2, bias_2,
+              weight_3, bias_3, weight_4, bias_4]
     updates = sgd(cost, params, lr=0.05)
     train = theano.function(
         inputs=[x_tensor, y_mat], outputs=cost, updates=updates, allow_input_downcast=True)
