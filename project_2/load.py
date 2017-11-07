@@ -10,7 +10,7 @@ DATA_DIR = os.path.join(CUR_DIR, 'data/')
 
 def one_hot(x_arr, n):
     """Generate one-hot vectors of data."""
-    if x_arr.isinstance(list):
+    if isinstance(x_arr, list):
         x_arr = np.array(x_arr)
     x_arr = x_arr.flatten()
     o_h = np.zeros((len(x_arr), n))
@@ -20,19 +20,19 @@ def one_hot(x_arr, n):
 
 def mnist(ntrain=60000, ntest=10000, onehot=True):
     """Load MNIST data."""
-    file_ = open(os.path.join(DATA_DIR, 'train-images-idx3-ubyte'))
+    file_ = open(os.path.join(DATA_DIR, 'train-images.idx3-ubyte'))
     loaded = np.fromfile(file=file_, dtype=np.uint8)
     train_x = loaded[16:].reshape((60000, 28 * 28)).astype(float)
 
-    file_ = open(os.path.join(DATA_DIR, 'train-labels-idx1-ubyte'))
+    file_ = open(os.path.join(DATA_DIR, 'train-labels.idx1-ubyte'))
     loaded = np.fromfile(file=file_, dtype=np.uint8)
     train_y = loaded[8:].reshape((60000))
 
-    file_ = open(os.path.join(DATA_DIR, 't10k-images-idx3-ubyte'))
+    file_ = open(os.path.join(DATA_DIR, 't10k-images.idx3-ubyte'))
     loaded = np.fromfile(file=file_, dtype=np.uint8)
     test_x = loaded[16:].reshape((10000, 28 * 28)).astype(float)
 
-    file_ = open(os.path.join(DATA_DIR, 't10k-labels-idx1-ubyte'))
+    file_ = open(os.path.join(DATA_DIR, 't10k-labels.idx1-ubyte'))
     loaded = np.fromfile(file=file_, dtype=np.uint8)
     test_y = loaded[8:].reshape((10000))
 

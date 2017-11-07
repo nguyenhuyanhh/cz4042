@@ -63,83 +63,90 @@ def shuffle_data(samples, labels):
     return samples, labels
 
 
-trX, teX, trY, teY = mnist(onehot=True)
+def main():
 
-trX = trX.reshape(-1, 1, 28, 28)
-teX = teX.reshape(-1, 1, 28, 28)
+    trX, teX, trY, teY = mnist(onehot=True)
 
-trX, trY = trX[:12000], trY[:12000]
-teX, teY = teX[:2000], teY[:2000]
+    trX = trX.reshape(-1, 1, 28, 28)
+    teX = teX.reshape(-1, 1, 28, 28)
+
+    trX, trY = trX[:12000], trY[:12000]
+    teX, teY = teX[:2000], teY[:2000]
+
+    X = T.tensor4('X')
+    Y = T.matrix('Y')
+
+    num_filters = 25
+    w1, b1 = init_weights_bias4((num_filters, 1, 9, 9), X.dtype)
+    w2, b2 = init_weights_bias2((num_filters * 5 * 5, 10), X.dtype)
+
+    y1, o1, py_x = model(X, w1, b1, w2, b2)
+
+    y_x = T.argmax(py_x, axis=1)
+
+    cost = T.mean(T.nnet.categorical_crossentropy(py_x, Y))
+    params = [w1, b1, w2, b2]
+
+    updates = sgd(cost, params, lr=0.05)
+
+    train = theano.function(
+        inputs=[X, Y], outputs=cost, updates=updates, allow_input_downcast=True)
+    predict = theano.function(
+        inputs=[X], outputs=y_x, allow_input_downcast=True)
+    test = theano.function(inputs=[X], outputs=[
+                           y1, o1], allow_input_downcast=True)
+
+    a = []
+    for i in range(noIters):
+        trX, trY = shuffle_data(trX, trY)
+        teX, teY = shuffle_data(teX, teY)
+        for start, end in zip(range(0, len(trX), batch_size), range(batch_size, len(trX), batch_size)):
+            cost = train(trX[start:end], trY[start:end])
+        a.append(np.mean(np.argmax(teY, axis=1) == predict(teX)))
+        print(a[i])
+
+    pylab.figure()
+    pylab.plot(range(noIters), a)
+    pylab.xlabel('epochs')
+    pylab.ylabel('test accuracy')
+    pylab.savefig('figure_2a_1.png')
+
+    w = w1.get_value()
+    pylab.figure()
+    pylab.gray()
+    for i in range(25):
+        pylab.subplot(
+            5, 5, i + 1); pylab.axis('off'); pylab.imshow(w[i, :, :, :].reshape(9, 9))
+    #pylab.title('filters learned')
+    pylab.savefig('figure_2a_2.png')
+
+    ind = np.random.randint(low=0, high=2000)
+    convolved, pooled = test(teX[ind:ind + 1, :])
+
+    pylab.figure()
+    pylab.gray()
+    pylab.axis('off'); pylab.imshow(teX[ind, :].reshape(28, 28))
+    #pylab.title('input image')
+    pylab.savefig('figure_2a_3.png')
+
+    pylab.figure()
+    pylab.gray()
+    for i in range(25):
+        pylab.subplot(
+            5, 5, i + 1); pylab.axis('off'); pylab.imshow(convolved[0, i, :].reshape(20, 20))
+    #pylab.title('convolved feature maps')
+    pylab.savefig('figure_2a_4.png')
+
+    pylab.figure()
+    pylab.gray()
+    for i in range(5):
+        pylab.subplot(
+            5, 5, i + 1); pylab.axis('off'); pylab.imshow(pooled[0, i, :].reshape(5, 5))
+    #pylab.title('pooled feature maps')
+    pylab.savefig('figure_2a_5.png')
+
+    pylab.show()
 
 
-X = T.tensor4('X')
-Y = T.matrix('Y')
-
-num_filters = 25
-w1, b1 = init_weights_bias4((num_filters, 1, 9, 9), X.dtype)
-w2, b2 = init_weights_bias2((num_filters * 5 * 5, 10), X.dtype)
-
-y1, o1, py_x = model(X, w1, b1, w2, b2)
-
-y_x = T.argmax(py_x, axis=1)
-
-cost = T.mean(T.nnet.categorical_crossentropy(py_x, Y))
-params = [w1, b1, w2, b2]
-
-updates = sgd(cost, params, lr=0.05)
-
-train = theano.function(
-    inputs=[X, Y], outputs=cost, updates=updates, allow_input_downcast=True)
-predict = theano.function(inputs=[X], outputs=y_x, allow_input_downcast=True)
-test = theano.function(inputs=[X], outputs=[y1, o1], allow_input_downcast=True)
-
-a = []
-for i in range(noIters):
-    trX, trY = shuffle_data(trX, trY)
-    teX, teY = shuffle_data(teX, teY)
-    for start, end in zip(range(0, len(trX), batch_size), range(batch_size, len(trX), batch_size)):
-        cost = train(trX[start:end], trY[start:end])
-    a.append(np.mean(np.argmax(teY, axis=1) == predict(teX)))
-    print(a[i])
-
-pylab.figure()
-pylab.plot(range(noIters), a)
-pylab.xlabel('epochs')
-pylab.ylabel('test accuracy')
-pylab.savefig('figure_2a_1.png')
-
-w = w1.get_value()
-pylab.figure()
-pylab.gray()
-for i in range(25):
-    pylab.subplot(
-        5, 5, i + 1); pylab.axis('off'); pylab.imshow(w[i, :, :, :].reshape(9, 9))
-#pylab.title('filters learned')
-pylab.savefig('figure_2a_2.png')
-
-ind = np.random.randint(low=0, high=2000)
-convolved, pooled = test(teX[ind:ind + 1, :])
-
-pylab.figure()
-pylab.gray()
-pylab.axis('off'); pylab.imshow(teX[ind, :].reshape(28, 28))
-#pylab.title('input image')
-pylab.savefig('figure_2a_3.png')
-
-pylab.figure()
-pylab.gray()
-for i in range(25):
-    pylab.subplot(
-        5, 5, i + 1); pylab.axis('off'); pylab.imshow(convolved[0, i, :].reshape(20, 20))
-#pylab.title('convolved feature maps')
-pylab.savefig('figure_2a_4.png')
-
-pylab.figure()
-pylab.gray()
-for i in range(5):
-    pylab.subplot(
-        5, 5, i + 1); pylab.axis('off'); pylab.imshow(pooled[0, i, :].reshape(5, 5))
-#pylab.title('pooled feature maps')
-pylab.savefig('figure_2a_5.png')
-
-pylab.show()
+if __name__ == '__main__':
+    main()
