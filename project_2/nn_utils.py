@@ -1,4 +1,4 @@
-"""Helper library to load MNIST data."""
+"""Utils for Project 2."""
 
 import os
 
@@ -18,7 +18,7 @@ def one_hot(x_arr, n):
     return o_h
 
 
-def mnist(ntrain=60000, ntest=10000, onehot=True):
+def load_mnist(ntrain=60000, ntest=10000, onehot=True):
     """Load MNIST data."""
     file_ = open(os.path.join(DATA_DIR, 'train-images.idx3-ubyte'))
     loaded = np.fromfile(file=file_, dtype=np.uint8)
@@ -53,3 +53,11 @@ def mnist(ntrain=60000, ntest=10000, onehot=True):
         test_y = np.asarray(test_y)
 
     return train_x, test_x, train_y, test_y
+
+
+def shuffle_data(samples, labels):
+    """Shuffle the data."""
+    idx = np.arange(samples.shape[0])
+    np.random.shuffle(idx)
+    samples, labels = samples[idx], labels[idx]
+    return samples, labels
