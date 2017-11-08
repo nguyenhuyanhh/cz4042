@@ -87,7 +87,7 @@ def model(x_ts, w_1, b_1, w_2, b_2, w_3, b_3, w_4, b_4):
 
     # softmax F4, output layer
     pyx = T.nnet.softmax(T.dot(y_3, w_4) + b_4)
-    return y_1, o_1, pyx
+    return y_1, o_1, y_2, o_2, pyx
 
 
 def sgd(cost, params, learning_rate=0.05, decay=0.0001):
@@ -160,12 +160,12 @@ def main():
     # softmax output layer, 10 neurons
     weight_4, bias_4 = init_weights_bias_2d(
         (100, 10), x_tensor.dtype)
-
-    y_1, o_1, py_x = model(x_tensor,
-                           weight_1, bias_1,
-                           weight_2, bias_2,
-                           weight_3, bias_3,
-                           weight_4, bias_4)
+   
+    y_1, o_1, y_2, o_2, py_x = model(x_tensor,
+                                     weight_1, bias_1,
+                                     weight_2, bias_2,
+                                     weight_3, bias_3,
+                                     weight_4, bias_4)
     y_x = T.argmax(py_x, axis=1)
 
     cost = T.mean(T.nnet.categorical_crossentropy(py_x, y_mat))
@@ -177,7 +177,7 @@ def main():
     predict = theano.function(
         inputs=[x_tensor], outputs=y_x, allow_input_downcast=True)
     test = theano.function(inputs=[x_tensor], outputs=[
-        y_1, o_1], allow_input_downcast=True)
+        y_1, o_1, y_2, o_2], allow_input_downcast=True)
 
     test_accr = []
     train_cost = []
@@ -225,7 +225,7 @@ def main():
     pylab.savefig(os.path.join(CUR_DIR, 'figure_2a_filters.png'))
 
     ind = np.random.randint(low=0, high=2000)
-    convolved, pooled = test(test_x[ind:ind + 1, :])
+    conv_1, pool_1, conv_2, pool_2 = test(test_x[ind:ind + 1, :])
 
     pylab.figure()
     pylab.gray()
@@ -239,18 +239,36 @@ def main():
     for i in range(15):
         pylab.subplot(5, 5, i + 1)
         pylab.axis('off')
-        pylab.imshow(convolved[0, i, :].reshape(20, 20))
-    pylab.suptitle('convolved feature maps')
-    pylab.savefig(os.path.join(CUR_DIR, 'figure_2a_conv_features.png'))
+        pylab.imshow(conv_1[0, i, :].reshape(20, 20))
+    pylab.suptitle('layer 1 convolved feature maps')
+    pylab.savefig(os.path.join(CUR_DIR, 'figure_2a_conv_1.png'))
 
     pylab.figure()
     pylab.gray()
-    for i in range(5):
+    for i in range(15):
         pylab.subplot(5, 5, i + 1)
         pylab.axis('off')
-        pylab.imshow(pooled[0, i, :].reshape(10, 10))
-    pylab.suptitle('pooled feature maps')
-    pylab.savefig(os.path.join(CUR_DIR, 'figure_2a_pooled_features.png'))
+        pylab.imshow(pool_1[0, i, :].reshape(10, 10))
+    pylab.suptitle('layer 1 pooled feature maps')
+    pylab.savefig(os.path.join(CUR_DIR, 'figure_2a_pooled_1.png'))
+
+    pylab.figure()
+    pylab.gray()
+    for i in range(20):
+        pylab.subplot(5, 5, i + 1)
+        pylab.axis('off')
+        pylab.imshow(conv_2[0, i, :].reshape(6, 6))
+    pylab.suptitle('layer 2 convolved feature maps')
+    pylab.savefig(os.path.join(CUR_DIR, 'figure_2a_conv_2.png'))
+
+    pylab.figure()
+    pylab.gray()
+    for i in range(20):
+        pylab.subplot(5, 5, i + 1)
+        pylab.axis('off')
+        pylab.imshow(pool_2[0, i, :].reshape(3, 3))
+    pylab.suptitle('layer 2 pooled feature maps')
+    pylab.savefig(os.path.join(CUR_DIR, 'figure_2a_pooled_2.png'))
     pylab.show()
 
 
