@@ -22,16 +22,15 @@ BATCH_SIZE = 128
 NO_ITERS = 100
 
 
-def main():
-    """Entry point for script."""
-    train_x, test_x, train_y, test_y = load_mnist(onehot=True)
-    train_x = train_x.reshape(-1, 1, 28, 28)
-    test_x = test_x.reshape(-1, 1, 28, 28)
-    train_x, train_y = train_x[:12000], train_y[:12000]
-    test_x, test_y = test_x[:2000], test_y[:2000]
-    print('finished loading data')
+def tt_plot_func(train_x, train_y, test_x, test_y, func=sgd):
+    """Train, test and plot using a particular update function.
 
-    train, predict, test = cnn(update_func=sgd)
+    Arguments:
+        train_x, train_y, test_x, test_y: train and test data
+        func: update function to use, default to nn_cnn.sgd
+    """
+    # train and test
+    train, predict, test = cnn(update_func=func)
     test_accr = []
     train_cost = []
     for i in tqdm(range(NO_ITERS)):
@@ -51,34 +50,29 @@ def main():
         test_accr.append(
             np.mean(np.argmax(test_y, axis=1) == predict(test_x)))
 
+    # output max accuracy at # iterations
     print('%.1f accuracy at %d iterations' %
           (np.max(test_accr) * 100, np.argmax(test_accr) + 1))
 
+    # plot test accuracy
     pylab.figure()
     pylab.plot(range(NO_ITERS), test_accr)
     pylab.xlabel('epochs')
     pylab.ylabel('test accuracy')
     pylab.savefig(os.path.join(CUR_DIR, 'project_2a_test.png'))
 
+    # plot training cost
     pylab.figure()
     pylab.plot(range(NO_ITERS), train_cost)
     pylab.xlabel('epochs')
     pylab.ylabel('training cost')
     pylab.savefig(os.path.join(CUR_DIR, 'project_2a_train.png'))
 
-    # w_1 = weight_1.get_value()
-    # pylab.figure()
-    # pylab.gray()
-    # for i in range(15):
-    #     pylab.subplot(5, 5, i + 1)
-    #     pylab.axis('off')
-    #     pylab.imshow(w_1[i, :, :, :].reshape(9, 9))
-    # pylab.suptitle('filters learned')
-    # pylab.savefig(os.path.join(CUR_DIR, 'figure_2a_filters.png'))
-
+    # pick a random image
     ind = np.random.randint(low=0, high=2000)
     conv_1, pool_1, conv_2, pool_2 = test(test_x[ind:ind + 1, :])
 
+    # show input image
     pylab.figure()
     pylab.gray()
     pylab.axis('off')
@@ -86,6 +80,7 @@ def main():
     pylab.title('input image')
     pylab.savefig(os.path.join(CUR_DIR, 'img_input.png'))
 
+    # show convolved and pooled feature maps
     pylab.figure()
     pylab.gray()
     for i in range(15):
@@ -124,5 +119,91 @@ def main():
     pylab.show()
 
 
+def tt_plot_comp(train_x, train_y, test_x, test_y):
+    """Train, test and plot a comparison of update functions.
+
+    Arguments:
+        train_x, train_y, test_x, test_y: train and test data
+    """
+    cost = {}
+    accr = {}
+    for func in [sgd, sgd_momentum, rms_prop]:
+        # train and test
+        train, predict, _ = cnn(update_func=func)
+        test_accr = []
+        train_cost = []
+        for _ in tqdm(range(NO_ITERS)):
+            train_x, train_y = shuffle_data(train_x, train_y)
+            test_x, test_y = shuffle_data(test_x, test_y)
+            cost = 0.0
+            train_length = len(train_x)
+
+            starts = range(0, train_length, BATCH_SIZE)
+            ends = range(BATCH_SIZE, train_length, BATCH_SIZE)
+            for start, end in zip(starts, ends):
+                cost += train(train_x[start:end], train_y[start:end])
+
+            # average out the cost for one epoch
+            cost = cost / (train_length // BATCH_SIZE)
+            train_cost += [cost]
+            test_accr.append(
+                np.mean(np.argmax(test_y, axis=1) == predict(test_x)))
+
+        # output max accuracy at # iterations
+        print('%.1f accuracy at %d iterations' %
+              (np.max(test_accr) * 100, np.argmax(test_accr) + 1))
+
+        cost[func.__name__] = train_cost
+        accr[func.__name__] = test_accr
+
+    # plot test accuracy
+    pylab.figure()
+    for label in ['sgd', 'sgd_momentum', 'rms_prop']:
+        pylab.plot(range(NO_ITERS), accr[label], label=label)
+    pylab.xlabel('epochs')
+    pylab.ylabel('test accuracy')
+    pylab.legend()
+    pylab.savefig(os.path.join(CUR_DIR, 'project_2a_test.png'))
+
+    # plot training cost
+    pylab.figure()
+    for label in ['sgd', 'sgd_momentum', 'rms_prop']:
+        pylab.plot(range(NO_ITERS), cost[label], label=label)
+    pylab.xlabel('epochs')
+    pylab.ylabel('training cost')
+    pylab.legend()
+    pylab.savefig(os.path.join(CUR_DIR, 'project_2a_train.png'))
+
+
+def train_test_plot(func=sgd, compare=False):
+    """Entry point for script.
+
+    Arguments:
+        func: update function to use, default to nn_cnn.sgd
+        compare: whether to compare accr and cost for update functions, default False
+    """
+    # load data
+    train_x, test_x, train_y, test_y = load_mnist(onehot=True)
+    train_x = train_x.reshape(-1, 1, 28, 28)
+    test_x = test_x.reshape(-1, 1, 28, 28)
+    train_x, train_y = train_x[:12000], train_y[:12000]
+    test_x, test_y = test_x[:2000], test_y[:2000]
+    print('finished loading data')
+
+    # compare update functions
+    if compare:
+        tt_plot_comp(train_x, train_y, test_x, test_y)
+    # just plot for one update function
+    else:
+        tt_plot_func(train_x, train_y, test_x, test_y, func=func)
+
+
 if __name__ == '__main__':
-    main()
+    # Q1
+    # train_test_plot()
+    # Q2
+    # train_test_plot(func=sgd_momentum)
+    # Q3
+    # train_test_plot(func=rms_prop)
+    # Q4
+    train_test_plot(compare=True)
