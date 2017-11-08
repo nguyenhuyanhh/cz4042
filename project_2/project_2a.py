@@ -6,12 +6,10 @@ import os
 
 import numpy as np
 import pylab
-import theano
-from theano import tensor as T
 from tqdm import tqdm
 
-from nn_utils import (init_weights_bias_2d, init_weights_bias_4d, load_mnist,
-                      model, rms_prop, sgd, sgd_momentum, shuffle_data)
+from nn_utils import load_mnist, shuffle_data
+from nn_cnn import cnn_sgd
 
 try:
     from itertools import izip as zip
@@ -22,48 +20,6 @@ CUR_DIR = os.path.dirname(os.path.realpath(__file__))
 np.random.seed(10)
 BATCH_SIZE = 128
 NO_ITERS = 100
-
-
-def cnn_sgd():
-    """CNN architecture with SGD."""
-    x_tensor = T.tensor4('X')
-    y_mat = T.matrix('Y')
-
-    # conv layer C1, 15 9x9 window filters
-    weight_1, bias_1 = init_weights_bias_4d(
-        (15, 1, 9, 9), x_tensor.dtype)
-
-    # conv layer C2, 20 5x5 window filters
-    weight_2, bias_2 = init_weights_bias_4d(
-        (20, 15, 5, 5), x_tensor.dtype)
-
-    # fully connected layer F3, 100 neurons
-    weight_3, bias_3 = init_weights_bias_2d(
-        (20 * 3 * 3, 100), x_tensor.dtype)
-
-    # softmax output layer, 10 neurons
-    weight_4, bias_4 = init_weights_bias_2d(
-        (100, 10), x_tensor.dtype)
-
-    y_1, o_1, y_2, o_2, py_x = model(x_tensor,
-                                     weight_1, bias_1,
-                                     weight_2, bias_2,
-                                     weight_3, bias_3,
-                                     weight_4, bias_4)
-    y_x = T.argmax(py_x, axis=1)
-
-    cost = T.mean(T.nnet.categorical_crossentropy(py_x, y_mat))
-    params = [weight_1, bias_1, weight_2, bias_2,
-              weight_3, bias_3, weight_4, bias_4]
-    updates = sgd(cost, params, learning_rate=0.05)
-    train = theano.function(
-        inputs=[x_tensor, y_mat], outputs=cost, updates=updates, allow_input_downcast=True)
-    predict = theano.function(
-        inputs=[x_tensor], outputs=y_x, allow_input_downcast=True)
-    test = theano.function(inputs=[x_tensor], outputs=[
-        y_1, o_1, y_2, o_2], allow_input_downcast=True)
-
-    return train, predict, test
 
 
 def main():
