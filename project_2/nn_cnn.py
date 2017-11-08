@@ -13,7 +13,7 @@ def init_weights_bias_4d(filter_shape, d_type):
     Arguments:
         filter_shape: 4-tuple of the form (num_filters, input_channels, height, width)
         d_type: dtype of tensor
-    Return:
+    Returns:
         weight, bias as theano.shared()
     """
     fan_in = np.prod(filter_shape[1:])
@@ -32,7 +32,7 @@ def init_weights_bias_2d(filter_shape, d_type):
     Arguments:
         filter_shape: 2-tuple of the form (input_size, output_size)
         d_type: dtype of tensor
-    Return:
+    Returns:
         weight, bias as theano.shared()
     """
     fan_in = filter_shape[1]
@@ -52,6 +52,9 @@ def model(x_ts, w_1, b_1, w_2, b_2, w_3, b_3, w_4, b_4):
     Arguments:
         x_ts: 4D tensor holding the data
         w_*, b_*: weights and biases for each layer
+    Returns:
+        y_1, o_1, y_2, o_2: output from convolutional layers
+        pyx: final output
     """
     # conv + pool layers C1, S1
     y_1 = T.nnet.relu(conv2d(x_ts, w_1) +
@@ -107,8 +110,14 @@ def rms_prop(cost, params, learning_rate=0.001, decay=0.0001, rho=0.9, epsilon=1
     return updates
 
 
-def cnn_sgd():
-    """CNN architecture with SGD."""
+def cnn(update_func=sgd):
+    """CNN architecture with different update functions.
+
+    Arguments:
+        update_func: the update function, defaults to sgd
+    Returns:
+        train, predict, test: theano.function()
+    """
     x_tensor = T.tensor4('X')
     y_mat = T.matrix('Y')
 

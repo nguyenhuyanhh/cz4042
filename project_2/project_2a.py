@@ -9,7 +9,7 @@ import pylab
 from tqdm import tqdm
 
 from nn_utils import load_mnist, shuffle_data
-from nn_cnn import cnn_sgd
+from nn_cnn import cnn, sgd, sgd_momentum, rms_prop
 
 try:
     from itertools import izip as zip
@@ -31,7 +31,7 @@ def main():
     test_x, test_y = test_x[:2000], test_y[:2000]
     print('finished loading data')
 
-    train, predict, test = cnn_sgd()
+    train, predict, test = cnn(update_func=sgd)
     test_accr = []
     train_cost = []
     for i in tqdm(range(NO_ITERS)):
@@ -58,13 +58,13 @@ def main():
     pylab.plot(range(NO_ITERS), test_accr)
     pylab.xlabel('epochs')
     pylab.ylabel('test accuracy')
-    pylab.savefig(os.path.join(CUR_DIR, 'figure_2a_test.png'))
+    pylab.savefig(os.path.join(CUR_DIR, 'project_2a_test.png'))
 
     pylab.figure()
     pylab.plot(range(NO_ITERS), train_cost)
     pylab.xlabel('epochs')
     pylab.ylabel('training cost')
-    pylab.savefig(os.path.join(CUR_DIR, 'figure_2a_train.png'))
+    pylab.savefig(os.path.join(CUR_DIR, 'project_2a_train.png'))
 
     # w_1 = weight_1.get_value()
     # pylab.figure()
@@ -84,7 +84,7 @@ def main():
     pylab.axis('off')
     pylab.imshow(test_x[ind, :].reshape(28, 28))
     pylab.title('input image')
-    pylab.savefig(os.path.join(CUR_DIR, 'figure_2a_input_img.png'))
+    pylab.savefig(os.path.join(CUR_DIR, 'img_input.png'))
 
     pylab.figure()
     pylab.gray()
@@ -93,7 +93,7 @@ def main():
         pylab.axis('off')
         pylab.imshow(conv_1[0, i, :].reshape(20, 20))
     pylab.suptitle('layer 1 convolved feature maps')
-    pylab.savefig(os.path.join(CUR_DIR, 'figure_2a_conv_1.png'))
+    pylab.savefig(os.path.join(CUR_DIR, 'img_conv_1.png'))
 
     pylab.figure()
     pylab.gray()
@@ -102,7 +102,7 @@ def main():
         pylab.axis('off')
         pylab.imshow(pool_1[0, i, :].reshape(10, 10))
     pylab.suptitle('layer 1 pooled feature maps')
-    pylab.savefig(os.path.join(CUR_DIR, 'figure_2a_pooled_1.png'))
+    pylab.savefig(os.path.join(CUR_DIR, 'img_pooled_1.png'))
 
     pylab.figure()
     pylab.gray()
@@ -111,7 +111,7 @@ def main():
         pylab.axis('off')
         pylab.imshow(conv_2[0, i, :].reshape(6, 6))
     pylab.suptitle('layer 2 convolved feature maps')
-    pylab.savefig(os.path.join(CUR_DIR, 'figure_2a_conv_2.png'))
+    pylab.savefig(os.path.join(CUR_DIR, 'img_conv_2.png'))
 
     pylab.figure()
     pylab.gray()
@@ -120,7 +120,7 @@ def main():
         pylab.axis('off')
         pylab.imshow(pool_2[0, i, :].reshape(3, 3))
     pylab.suptitle('layer 2 pooled feature maps')
-    pylab.savefig(os.path.join(CUR_DIR, 'figure_2a_pooled_2.png'))
+    pylab.savefig(os.path.join(CUR_DIR, 'img_pooled_2.png'))
     pylab.show()
 
 
