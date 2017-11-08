@@ -125,9 +125,10 @@ def tt_plot_comp(train_x, train_y, test_x, test_y):
     Arguments:
         train_x, train_y, test_x, test_y: train and test data
     """
+    funcs = [sgd, sgd_momentum, rms_prop]
     cost = []
     accr = []
-    for func in [sgd, sgd_momentum, rms_prop]:
+    for func in funcs:
         # train and test
         train, predict, _ = cnn(update_func=func)
         test_accr = []
@@ -153,13 +154,13 @@ def tt_plot_comp(train_x, train_y, test_x, test_y):
         print('%.1f accuracy at %d iterations' %
               (np.max(test_accr) * 100, np.argmax(test_accr) + 1))
 
-        cost += (func.__name__, train_cost)
-        accr += (func.__name__, test_accr)
+        cost += [train_cost]
+        accr += [test_accr]
 
     # plot test accuracy
     pylab.figure()
-    for item in accr:
-        pylab.plot(range(NO_ITERS), item[1], label=item[0])
+    for label, series in zip([x.__name__ for x in funcs], accr):
+        pylab.plot(range(NO_ITERS), series, label=label)
     pylab.xlabel('epochs')
     pylab.ylabel('test accuracy')
     pylab.legend()
@@ -167,12 +168,13 @@ def tt_plot_comp(train_x, train_y, test_x, test_y):
 
     # plot training cost
     pylab.figure()
-    for item in cost:
-        pylab.plot(range(NO_ITERS), item[1], label=item[0])
+    for label, series in zip([x.__name__ for x in funcs], cost):
+        pylab.plot(range(NO_ITERS), series, label=label)
     pylab.xlabel('epochs')
     pylab.ylabel('training cost')
     pylab.legend()
     pylab.savefig(os.path.join(CUR_DIR, 'project_2a_train.png'))
+    pylab.show()
 
 
 def train_test_plot(func=sgd, compare=False):
