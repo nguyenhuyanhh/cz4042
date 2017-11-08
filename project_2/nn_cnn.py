@@ -147,7 +147,7 @@ def cnn(update_func=sgd):
     cost = T.mean(T.nnet.categorical_crossentropy(py_x, y_mat))
     params = [weight_1, bias_1, weight_2, bias_2,
               weight_3, bias_3, weight_4, bias_4]
-    updates = sgd(cost, params, learning_rate=0.05)
+    updates = update_func(cost, params)
     train = theano.function(
         inputs=[x_tensor, y_mat], outputs=cost, updates=updates, allow_input_downcast=True)
     predict = theano.function(
