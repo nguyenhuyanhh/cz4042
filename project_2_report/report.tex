@@ -7,9 +7,12 @@
 \onehalfspacing{}
 
 \usepackage{graphicx}
+\graphicspath{{images/}}
 \usepackage{listings}
 \usepackage{color}
 \usepackage{booktabs}
+\usepackage{tabu}
+\usepackage{longtable}
 
 % some configurations for the listings package
 \definecolor{codegreen}{rgb}{0,0.6,0}
@@ -36,6 +39,7 @@
 \lstset{style=mystyle}
 
 \newcommand{\imgw}{0.77\textwidth}
+\newcommand{\imgwt}{0.47\textwidth}
 
 % actual report
 \begin{document}
@@ -43,7 +47,7 @@
     \begin{center}
     
     % school logo
-    \includegraphics[width=0.9\textwidth]{images/ntu_logo.png}
+    \includegraphics[width=0.9\textwidth]{ntu_logo}
     \\[6cm]
     
     % report title and author
