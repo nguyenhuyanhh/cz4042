@@ -8,12 +8,12 @@ CUR_DIR = os.path.dirname(os.path.realpath(__file__))
 DATA_DIR = os.path.join(CUR_DIR, 'data/')
 
 
-def one_hot(x_arr, n):
+def one_hot(x_arr, n_d):
     """Generate one-hot vectors of data."""
     if isinstance(x_arr, list):
         x_arr = np.array(x_arr)
     x_arr = x_arr.flatten()
-    o_h = np.zeros((len(x_arr), n))
+    o_h = np.zeros((len(x_arr), n_d))
     o_h[np.arange(len(x_arr)), x_arr] = 1
     return o_h
 
