@@ -34,11 +34,23 @@ def init_bias(n_bias):
     """Initialize bias."""
     return theano.shared(value=np.zeros(n_bias, dtype=theano.config.floatX), borrow=True)
 
+def sgd_momentum(cost, params, lr=0.1, decay=0.0001, momentum=0.1):
+    grads = T.grad(cost=cost, wrt=params)
+    updates = []
+    for p, g in zip(params, grads):
+        v = theano.shared(p.get_value())
+        v_new = momentum*v - (g + decay*p) * lr 
+        updates.append([p, p + v_new])
+        updates.append([v, v_new])
+    return updates
 
 def main():
     """Entry point for script."""
     train_x, test_x, train_y, test_y = load_mnist(onehot=True)
-    trx = len(train_x)
+
+    # 1/5 dataset
+    #train_x, train_y = train_x[:12000], train_y[:12000]
+    #test_x, test_y = test_x[:2000], test_y[:2000]
 
     x_mat = T.fmatrix('x')
     y_mat = T.fmatrix('d')
@@ -52,6 +64,16 @@ def main():
     training_epochs = 25
     learning_rate = 0.1
     batch_size = 128
+    beta = 0.5
+    rho = 0.05
+
+    use_momentum = True
+    use_sparsity = True
+
+    if use_momentum:
+        print('Using momentum term.')
+    if use_sparsity:
+        print('Using sparsity constraint.')
 
     weight_1 = init_weights(28 * 28, 900)
     bias_1 = init_bias(900)
@@ -78,13 +100,27 @@ def main():
 
     # reconstruction layer
     z_1 = T.nnet.sigmoid(T.dot(y_3, weight_4) + bias_4)
-    cost_1 = - T.mean(T.sum(x_mat * T.log(z_1) +
+
+    if use_sparsity:
+        cost_1 = - T.mean(T.sum(x_mat * T.log(z_1) +
+                            (1 - x_mat) * T.log(1 - z_1), axis=1)) \
+                 + beta*T.shape(y_3)[1]*(rho*T.log(rho) + (1-rho)*T.log(1-rho)) \
+                 - beta*rho*T.sum(T.log(T.mean(y_3, axis=0)+1e-6)) \
+                 - beta*(1-rho)*T.sum(T.log(1-T.mean(y_3, axis=0)+1e-6))
+    else:
+        cost_1 = - T.mean(T.sum(x_mat * T.log(z_1) +
                             (1 - x_mat) * T.log(1 - z_1), axis=1))
+        
     params_1 = [weight_1, bias_1, weight_2,
                 bias_2, weight_3, bias_3, weight_4, bias_4]
-    grads_1 = T.grad(cost_1, params_1)
-    updates_1 = [(param1, param1 - learning_rate * grad1)
-                 for param1, grad1 in zip(params_1, grads_1)]
+
+    if use_momentum:
+        updates_1 = sgd_momentum(cost_1, params_1)
+    else:
+        grads_1 = T.grad(cost_1, params_1)
+        updates_1 = [(param1, param1 - learning_rate * grad1)
+                     for param1, grad1 in zip(params_1, grads_1)]
+    
     train_da1 = theano.function(
         inputs=[x_mat], outputs=cost_1, updates=updates_1, allow_input_downcast=True)
     test_da1 = theano.function(
@@ -96,9 +132,14 @@ def main():
     cost_2 = T.mean(T.nnet.categorical_crossentropy(p_y_4, y_mat))
     params_2 = [weight_1, bias_1, weight_2,
                 bias_2, weight_3, bias_3, weight_5, bias_5]
-    grads_2 = T.grad(cost_2, params_2)
-    updates_2 = [(param2, param2 - learning_rate * grad2)
-                 for param2, grad2 in zip(params_2, grads_2)]
+
+    if use_momentum:
+        updates_2 = sgd_momentum(cost_2, params_2)
+    else:
+        grads_2 = T.grad(cost_2, params_2)
+        updates_2 = [(param2, param2 - learning_rate * grad2)
+                     for param2, grad2 in zip(params_2, grads_2)]
+        
     train_ffn = theano.function(
         inputs=[x_mat, y_mat], outputs=cost_2, updates=updates_2, allow_input_downcast=True)
     test_ffn = theano.function(
@@ -108,9 +149,9 @@ def main():
     print('training dae1 ...')
     train_cost = []
     for _ in tqdm(range(training_epochs)):
-        # go through trainng set
+    # go through trainng set
         cost = []
-        for start, end in zip(range(0, trx, batch_size), range(batch_size, trx, batch_size)):
+        for start, end in zip(range(0, len(train_x), batch_size), range(batch_size, len(train_x), batch_size)):
             cost.append(train_da1(train_x[start:end]))
         train_cost.append(np.mean(cost, dtype='float64'))
 
@@ -118,37 +159,37 @@ def main():
     pylab.plot(range(training_epochs), train_cost)
     pylab.xlabel('iterations')
     pylab.ylabel('cross-entropy')
-    pylab.savefig(os.path.join(CUR_DIR, 'project_2b_train.png'))
+    pylab.savefig('figure_2b_train.png')
 
-    w_1 = weight_1.get_value()
+    w1 = weight_1.get_value()
     pylab.figure()
     pylab.gray()
     for i in range(100):
         pylab.subplot(10, 10, i + 1)
         pylab.axis('off')
-        pylab.imshow(w_1[:, i].reshape(28, 28))
-    pylab.suptitle('layer 1 weight samples')
-    pylab.savefig(os.path.join(CUR_DIR, 'project_2b_weight1.png'))
+        pylab.imshow(w1[:, i].reshape(28, 28))
+        pylab.suptitle('layer 1 weight samples')
+    pylab.savefig('figure_2b_weight1.png')
 
-    w_2 = weight_2.get_value()
+    w2 = weight_2.get_value()
     pylab.figure()
     pylab.gray()
     for i in range(100):
         pylab.subplot(10, 10, i + 1)
         pylab.axis('off')
-        pylab.imshow(w_2[:, i].reshape(30, 30))
+        pylab.imshow(w2[:, i].reshape(30, 30))
     pylab.suptitle('layer 2 weight samples')
-    pylab.savefig(os.path.join(CUR_DIR, 'project_2b_weight2.png'))
+    pylab.savefig('figure_2b_weight2.png')
 
-    w_3 = weight_3.get_value()
+    w3 = weight_3.get_value()
     pylab.figure()
     pylab.gray()
     for i in range(100):
         pylab.subplot(10, 10, i + 1)
         pylab.axis('off')
-        pylab.imshow(w_3[:, i].reshape(25, 25))
+        pylab.imshow(w3[:, i].reshape(25, 25))
     pylab.suptitle('layer 3 weight samples')
-    pylab.savefig(os.path.join(CUR_DIR, 'project_2b_weight3.png'))
+    pylab.savefig('figure_2b_weight3.png')
 
     ind = np.random.randint(low=0, high=1900)
     layer_1, layer_2, layer_3, output = test_da1(train_x[ind:ind + 100, :])
@@ -161,7 +202,7 @@ def main():
         pylab.axis('off')
         pylab.imshow(train_x[ind + i:ind + i + 1, :].reshape(28, 28))
     pylab.suptitle('input images')
-    pylab.savefig(os.path.join(CUR_DIR, 'project_2b_input.png'))
+    pylab.savefig('figure_2b_input.png')
 
     # hidden layer activations
     pylab.figure()
@@ -171,7 +212,7 @@ def main():
         pylab.axis('off')
         pylab.imshow(layer_1[i, :].reshape(30, 30))
     pylab.suptitle('layer 1 activations')
-    pylab.savefig(os.path.join(CUR_DIR, 'project_2b_layer1.png'))
+    pylab.savefig('figure_2b_layer1.png')
 
     pylab.figure()
     pylab.gray()
@@ -180,7 +221,7 @@ def main():
         pylab.axis('off')
         pylab.imshow(layer_2[i, :].reshape(25, 25))
     pylab.suptitle('layer 2 activations')
-    pylab.savefig(os.path.join(CUR_DIR, 'project_2b_layer2.png'))
+    pylab.savefig('figure_2b_layer2.png')
 
     pylab.figure()
     pylab.gray()
@@ -189,7 +230,7 @@ def main():
         pylab.axis('off')
         pylab.imshow(layer_3[i, :].reshape(20, 20))
     pylab.suptitle('layer 3 activations')
-    pylab.savefig(os.path.join(CUR_DIR, 'project_2b_layer3.png'))
+    pylab.savefig('figure_2b_layer3.png')
 
     # reconstructed outputs
     pylab.figure()
@@ -199,7 +240,7 @@ def main():
         pylab.axis('off')
         pylab.imshow(output[i, :].reshape(28, 28))
     pylab.suptitle('reconstructed outputs')
-    pylab.savefig(os.path.join(CUR_DIR, 'project_2b_output.png'))
+    pylab.savefig('figure_2b_output.png')
 
     # softmax
     print('training ffn ...')
@@ -208,7 +249,7 @@ def main():
     for _ in tqdm(range(training_epochs)):
         # go through trainng set
         cost = []
-        for start, end in zip(range(0, trx, batch_size), range(batch_size, trx, batch_size)):
+        for start, end in zip(range(0, len(train_x), batch_size), range(batch_size, len(train_x), batch_size)):
             cost.append(train_ffn(train_x[start:end], train_y[start:end]))
         train_cost.append(np.mean(cost, dtype='float64'))
         test_accr.append(
