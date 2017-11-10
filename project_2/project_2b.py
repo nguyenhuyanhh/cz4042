@@ -256,7 +256,7 @@ def main():
     for _ in tqdm(range(training_epochs)):
         # go through trainng set
         cost = []
-        for start, end in zip(range(0, len(train_x), batch_size), range(batch_size, len(train_x), batch_size)):
+        for start, end in zip(range(0, trx, batch_size), range(batch_size, trx, batch_size)):
             cost.append(train_ffn(train_x[start:end], train_y[start:end]))
         train_cost.append(np.mean(cost, dtype='float64'))
         test_accr.append(
