@@ -38,10 +38,7 @@ def init_bias(n_bias):
 def main():
     """Entry point for script."""
     train_x, test_x, train_y, test_y = load_mnist(onehot=True)
-
-    # 1/5 dataset
-    #train_x, train_y = train_x[:12000], train_y[:12000]
-    #test_x, test_y = test_x[:2000], test_y[:2000]
+    trx = len(train_x)
 
     x_mat = T.fmatrix('x')
     y_mat = T.fmatrix('d')
@@ -110,49 +107,48 @@ def main():
     # stacked denoising autoencoder
     print('training dae1 ...')
     train_cost = []
-    for epoch in range(training_epochs):
-    # go through trainng set
+    for _ in tqdm(range(training_epochs)):
+        # go through trainng set
         cost = []
-        for start, end in zip(range(0, len(train_x), batch_size), range(batch_size, len(train_x), batch_size)):
+        for start, end in zip(range(0, trx, batch_size), range(batch_size, trx, batch_size)):
             cost.append(train_da1(train_x[start:end]))
         train_cost.append(np.mean(cost, dtype='float64'))
-        print(train_cost[epoch])
 
     pylab.figure()
     pylab.plot(range(training_epochs), train_cost)
     pylab.xlabel('iterations')
     pylab.ylabel('cross-entropy')
-    pylab.savefig('figure_2b_train.png')
+    pylab.savefig(os.path.join(CUR_DIR, 'project_2b_train.png'))
 
-    w1 = weight_1.get_value()
+    w_1 = weight_1.get_value()
     pylab.figure()
     pylab.gray()
     for i in range(100):
         pylab.subplot(10, 10, i + 1)
         pylab.axis('off')
-        pylab.imshow(w1[:, i].reshape(28, 28))
-        pylab.suptitle('layer 1 weight samples')
-    pylab.savefig('figure_2b_weight1.png')
+        pylab.imshow(w_1[:, i].reshape(28, 28))
+    pylab.suptitle('layer 1 weight samples')
+    pylab.savefig(os.path.join(CUR_DIR, 'project_2b_weight1.png'))
 
-    w2 = weight_2.get_value()
+    w_2 = weight_2.get_value()
     pylab.figure()
     pylab.gray()
     for i in range(100):
         pylab.subplot(10, 10, i + 1)
         pylab.axis('off')
-        pylab.imshow(w2[:, i].reshape(30, 30))
+        pylab.imshow(w_2[:, i].reshape(30, 30))
     pylab.suptitle('layer 2 weight samples')
-    pylab.savefig('figure_2b_weight2.png')
+    pylab.savefig(os.path.join(CUR_DIR, 'project_2b_weight2.png'))
 
-    w3 = weight_3.get_value()
+    w_3 = weight_3.get_value()
     pylab.figure()
     pylab.gray()
     for i in range(100):
         pylab.subplot(10, 10, i + 1)
         pylab.axis('off')
-        pylab.imshow(w3[:, i].reshape(25, 25))
+        pylab.imshow(w_3[:, i].reshape(25, 25))
     pylab.suptitle('layer 3 weight samples')
-    pylab.savefig('figure_2b_weight3.png')
+    pylab.savefig(os.path.join(CUR_DIR, 'project_2b_weight3.png'))
 
     ind = np.random.randint(low=0, high=1900)
     layer_1, layer_2, layer_3, output = test_da1(train_x[ind:ind + 100, :])
@@ -165,7 +161,7 @@ def main():
         pylab.axis('off')
         pylab.imshow(train_x[ind + i:ind + i + 1, :].reshape(28, 28))
     pylab.suptitle('input images')
-    pylab.savefig('figure_2b_input.png')
+    pylab.savefig(os.path.join(CUR_DIR, 'project_2b_input.png'))
 
     # hidden layer activations
     pylab.figure()
@@ -175,7 +171,7 @@ def main():
         pylab.axis('off')
         pylab.imshow(layer_1[i, :].reshape(30, 30))
     pylab.suptitle('layer 1 activations')
-    pylab.savefig('figure_2b_layer1.png')
+    pylab.savefig(os.path.join(CUR_DIR, 'project_2b_layer1.png'))
 
     pylab.figure()
     pylab.gray()
@@ -184,7 +180,7 @@ def main():
         pylab.axis('off')
         pylab.imshow(layer_2[i, :].reshape(25, 25))
     pylab.suptitle('layer 2 activations')
-    pylab.savefig('figure_2b_layer2.png')
+    pylab.savefig(os.path.join(CUR_DIR, 'project_2b_layer2.png'))
 
     pylab.figure()
     pylab.gray()
@@ -193,7 +189,7 @@ def main():
         pylab.axis('off')
         pylab.imshow(layer_3[i, :].reshape(20, 20))
     pylab.suptitle('layer 3 activations')
-    pylab.savefig('figure_2b_layer3.png')
+    pylab.savefig(os.path.join(CUR_DIR, 'project_2b_layer3.png'))
 
     # reconstructed outputs
     pylab.figure()
@@ -203,17 +199,16 @@ def main():
         pylab.axis('off')
         pylab.imshow(output[i, :].reshape(28, 28))
     pylab.suptitle('reconstructed outputs')
-    pylab.savefig('figure_2b_output.png')
+    pylab.savefig(os.path.join(CUR_DIR, 'project_2b_output.png'))
 
     # softmax
     print('training ffn ...')
     train_cost = []
     test_accr = []
-    train_x = len(train_x)
     for _ in tqdm(range(training_epochs)):
         # go through trainng set
         cost = []
-        for start, end in zip(range(0, train_x, batch_size), range(batch_size, train_x, batch_size)):
+        for start, end in zip(range(0, trx, batch_size), range(batch_size, trx, batch_size)):
             cost.append(train_ffn(train_x[start:end], train_y[start:end]))
         train_cost.append(np.mean(cost, dtype='float64'))
         test_accr.append(
