@@ -35,10 +35,26 @@ def init_bias(n_bias):
     return theano.shared(value=np.zeros(n_bias, dtype=theano.config.floatX), borrow=True)
 
 
+def sgd_momentum(cost, params, learning_rate=0.05, decay=0.0001, momentum=0.5):
+    """Stochastic Gradient Descent with momentum."""
+    grads = T.grad(cost=cost, wrt=params)
+    updates = []
+    for param, grad in zip(params, grads):
+        vel = theano.shared(param.get_value() * 0.)
+        vel_new = momentum * vel - (grad + decay * param) * learning_rate
+        updates.append([param, param + vel_new])
+        updates.append([vel, vel_new])
+    return updates
+
+
 def main():
     """Entry point for script."""
     train_x, test_x, train_y, test_y = load_mnist(onehot=True)
     trx = len(train_x)
+
+    # 1/5 dataset
+    #train_x, train_y = train_x[:12000], train_y[:12000]
+    #test_x, test_y = test_x[:2000], test_y[:2000]
 
     x_mat = T.fmatrix('x')
     y_mat = T.fmatrix('d')
@@ -52,6 +68,16 @@ def main():
     training_epochs = 25
     learning_rate = 0.1
     batch_size = 128
+    beta = 0.5
+    rho = 0.05
+
+    use_momentum = True
+    use_sparsity = True
+
+    if use_momentum:
+        print('Using momentum term.')
+    if use_sparsity:
+        print('Using sparsity constraint.')
 
     weight_1 = init_weights(28 * 28, 900)
     bias_1 = init_bias(900)
@@ -78,13 +104,30 @@ def main():
 
     # reconstruction layer
     z_1 = T.nnet.sigmoid(T.dot(y_3, weight_4) + bias_4)
-    cost_1 = - T.mean(T.sum(x_mat * T.log(z_1) +
-                            (1 - x_mat) * T.log(1 - z_1), axis=1))
+
+    if use_sparsity:
+        term_1 = - T.mean(T.sum(x_mat * T.log(z_1) +
+                                (1 - x_mat) * T.log(1 - z_1), axis=1))
+        term_2 = beta * T.shape(y_3)[1] * (rho *
+                                           T.log(rho) + (1 - rho) * T.log(1 - rho))
+        term_3 = - beta * rho * T.sum(T.log(T.mean(y_3, axis=0) + 1e-6))
+        term_4 = - beta * (1 - rho) * \
+            T.sum(T.log(1 - T.mean(y_3, axis=0) + 1e-6))
+        cost_1 = term_1 + term_2 + term_3 + term_4
+    else:
+        cost_1 = - T.mean(T.sum(x_mat * T.log(z_1) +
+                                (1 - x_mat) * T.log(1 - z_1), axis=1))
+
     params_1 = [weight_1, bias_1, weight_2,
                 bias_2, weight_3, bias_3, weight_4, bias_4]
-    grads_1 = T.grad(cost_1, params_1)
-    updates_1 = [(param1, param1 - learning_rate * grad1)
-                 for param1, grad1 in zip(params_1, grads_1)]
+
+    if use_momentum:
+        updates_1 = sgd_momentum(cost_1, params_1)
+    else:
+        grads_1 = T.grad(cost_1, params_1)
+        updates_1 = [(param1, param1 - learning_rate * grad1)
+                     for param1, grad1 in zip(params_1, grads_1)]
+
     train_da1 = theano.function(
         inputs=[x_mat], outputs=cost_1, updates=updates_1, allow_input_downcast=True)
     test_da1 = theano.function(
@@ -96,9 +139,14 @@ def main():
     cost_2 = T.mean(T.nnet.categorical_crossentropy(p_y_4, y_mat))
     params_2 = [weight_1, bias_1, weight_2,
                 bias_2, weight_3, bias_3, weight_5, bias_5]
-    grads_2 = T.grad(cost_2, params_2)
-    updates_2 = [(param2, param2 - learning_rate * grad2)
-                 for param2, grad2 in zip(params_2, grads_2)]
+
+    if use_momentum:
+        updates_2 = sgd_momentum(cost_2, params_2)
+    else:
+        grads_2 = T.grad(cost_2, params_2)
+        updates_2 = [(param2, param2 - learning_rate * grad2)
+                     for param2, grad2 in zip(params_2, grads_2)]
+
     train_ffn = theano.function(
         inputs=[x_mat, y_mat], outputs=cost_2, updates=updates_2, allow_input_downcast=True)
     test_ffn = theano.function(
