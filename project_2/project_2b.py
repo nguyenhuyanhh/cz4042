@@ -168,10 +168,11 @@ def main():
     pylab.ylabel('cross-entropy')
     pylab.savefig(os.path.join(CUR_DIR, 'project_2b_train.png'))
 
+    print('plotting weight samples')
     w_1 = weight_1.get_value()
     pylab.figure()
     pylab.gray()
-    for i in range(100):
+    for i in tqdm(range(100)):
         pylab.subplot(10, 10, i + 1)
         pylab.axis('off')
         pylab.imshow(w_1[:, i].reshape(28, 28))
@@ -202,9 +203,10 @@ def main():
     layer_1, layer_2, layer_3, output = test_da1(train_x[ind:ind + 100, :])
 
     # show input image
+    print('plotting inputs...')
     pylab.figure()
     pylab.gray()
-    for i in range(100):
+    for i in tqdm(range(100)):
         pylab.subplot(10, 10, i + 1)
         pylab.axis('off')
         pylab.imshow(train_x[ind + i:ind + i + 1, :].reshape(28, 28))
@@ -212,9 +214,10 @@ def main():
     pylab.savefig(os.path.join(CUR_DIR, 'project_2b_input.png'))
 
     # hidden layer activations
+    print('plotting hidden layer activations...')
     pylab.figure()
     pylab.gray()
-    for i in range(100):
+    for i in tqdm(range(100)):
         pylab.subplot(10, 10, i + 1)
         pylab.axis('off')
         pylab.imshow(layer_1[i, :].reshape(30, 30))
@@ -240,9 +243,10 @@ def main():
     pylab.savefig(os.path.join(CUR_DIR, 'project_2b_layer3.png'))
 
     # reconstructed outputs
+    print('plotting reconstructed outputs...')
     pylab.figure()
     pylab.gray()
-    for i in range(100):
+    for i in tqdm(range(100)):
         pylab.subplot(10, 10, i + 1)
         pylab.axis('off')
         pylab.imshow(output[i, :].reshape(28, 28))
