@@ -47,14 +47,10 @@ def sgd_momentum(cost, params, learning_rate=0.05, decay=0.0001, momentum=0.5):
     return updates
 
 
-def main():
+def train_test_plot(use_momentum=False, use_sparsity=False):
     """Entry point for script."""
     train_x, test_x, train_y, test_y = load_mnist(onehot=True)
     trx = len(train_x)
-
-    # 1/5 dataset
-    #train_x, train_y = train_x[:12000], train_y[:12000]
-    #test_x, test_y = test_x[:2000], test_y[:2000]
 
     x_mat = T.fmatrix('x')
     y_mat = T.fmatrix('d')
@@ -70,9 +66,6 @@ def main():
     batch_size = 128
     beta = 0.5
     rho = 0.05
-
-    use_momentum = True
-    use_sparsity = True
 
     if use_momentum:
         print('Using momentum term.')
@@ -182,7 +175,7 @@ def main():
     w_2 = weight_2.get_value()
     pylab.figure()
     pylab.gray()
-    for i in range(100):
+    for i in tqdm(range(100)):
         pylab.subplot(10, 10, i + 1)
         pylab.axis('off')
         pylab.imshow(w_2[:, i].reshape(30, 30))
@@ -192,7 +185,7 @@ def main():
     w_3 = weight_3.get_value()
     pylab.figure()
     pylab.gray()
-    for i in range(100):
+    for i in tqdm(range(100)):
         pylab.subplot(10, 10, i + 1)
         pylab.axis('off')
         pylab.imshow(w_3[:, i].reshape(25, 25))
@@ -226,7 +219,7 @@ def main():
 
     pylab.figure()
     pylab.gray()
-    for i in range(100):
+    for i in tqdm(range(100)):
         pylab.subplot(10, 10, i + 1)
         pylab.axis('off')
         pylab.imshow(layer_2[i, :].reshape(25, 25))
@@ -235,7 +228,7 @@ def main():
 
     pylab.figure()
     pylab.gray()
-    for i in range(100):
+    for i in tqdm(range(100)):
         pylab.subplot(10, 10, i + 1)
         pylab.axis('off')
         pylab.imshow(layer_3[i, :].reshape(20, 20))
@@ -285,4 +278,7 @@ def main():
 
 
 if __name__ == '__main__':
-    main()
+    # Q1
+    # train_test_plot()
+    # Q2
+    train_test_plot(True, True)
