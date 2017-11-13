@@ -100,3 +100,29 @@ after 25 epochs.
 \begin{center}
     \includegraphics[width=\imgw]{project_2b_ae_sparsity/test_ffn}
 \end{center}
+
+\section*{Analysis}
+
+The following graph compares the training cost of the autoencoder on both
+approaches.
+
+\begin{center}
+    \includegraphics[width=\imgw]{project_2b_train}
+\end{center}
+
+The following graph compares the training cost of the autoencoder classifier
+on both approaches.
+
+\begin{center}
+    \includegraphics[width=\imgw]{project_2b_train_ffn}
+\end{center}
+
+The following graph compares the test accuracy of the autoencoder classifier
+on both approaches.
+
+\begin{center}
+    \includegraphics[width=\imgw]{project_2b_test_ffn}
+\end{center}
+
+The addition of momentum and sparsity results in slightly higher training cost, in
+exchange for slightly better test accuracy.
