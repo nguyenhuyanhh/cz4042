@@ -35,7 +35,7 @@ def init_bias(n_bias):
     return theano.shared(value=np.zeros(n_bias, dtype=theano.config.floatX), borrow=True)
 
 
-def sgd_momentum(cost, params, learning_rate=0.05, decay=0.0001, momentum=0.5):
+def sgd_momentum(cost, params, learning_rate=0.1, decay=0.0001, momentum=0.1):
     """Stochastic Gradient Descent with momentum."""
     grads = T.grad(cost=cost, wrt=params)
     updates = []
@@ -47,10 +47,17 @@ def sgd_momentum(cost, params, learning_rate=0.05, decay=0.0001, momentum=0.5):
     return updates
 
 
+def sgd(cost, params, learning_rate=0.1):
+    """Stochastic Gradient Descent."""
+    grads = T.grad(cost, params)
+    return [(param, param - learning_rate * grad) for param, grad in zip(params, grads)]
+
+
 def train_test_plot(use_momentum=False, use_sparsity=False):
     """Entry point for script."""
     train_x, test_x, train_y, test_y = load_mnist(onehot=True)
     trx = len(train_x)
+    print('finished loading data')
 
     x_mat = T.fmatrix('x')
     y_mat = T.fmatrix('d')
@@ -62,7 +69,6 @@ def train_test_plot(use_momentum=False, use_sparsity=False):
 
     corruption_level = 0.1
     training_epochs = 25
-    learning_rate = 0.1
     batch_size = 128
     beta = 0.5
     rho = 0.05
@@ -117,9 +123,7 @@ def train_test_plot(use_momentum=False, use_sparsity=False):
     if use_momentum:
         updates_1 = sgd_momentum(cost_1, params_1)
     else:
-        grads_1 = T.grad(cost_1, params_1)
-        updates_1 = [(param1, param1 - learning_rate * grad1)
-                     for param1, grad1 in zip(params_1, grads_1)]
+        updates_1 = sgd(cost_1, params_1)
 
     train_da1 = theano.function(
         inputs=[x_mat], outputs=cost_1, updates=updates_1, allow_input_downcast=True)
@@ -136,9 +140,7 @@ def train_test_plot(use_momentum=False, use_sparsity=False):
     if use_momentum:
         updates_2 = sgd_momentum(cost_2, params_2)
     else:
-        grads_2 = T.grad(cost_2, params_2)
-        updates_2 = [(param2, param2 - learning_rate * grad2)
-                     for param2, grad2 in zip(params_2, grads_2)]
+        updates_2 = sgd(cost_2, params_2)
 
     train_ffn = theano.function(
         inputs=[x_mat, y_mat], outputs=cost_2, updates=updates_2, allow_input_downcast=True)

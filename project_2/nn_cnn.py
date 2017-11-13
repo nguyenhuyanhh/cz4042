@@ -84,7 +84,7 @@ def sgd(cost, params, learning_rate=0.05, decay=0.0001):
     return updates
 
 
-def sgd_momentum(cost, params, learning_rate=0.05, decay=0.0001, momentum=0.5):
+def sgd_momentum(cost, params, learning_rate=0.05, decay=0.0001, momentum=0.1):
     """Stochastic Gradient Descent with momentum."""
     grads = T.grad(cost=cost, wrt=params)
     updates = []
