@@ -313,6 +313,7 @@ def tt_comp():
         pylab.plot(range(training_epochs), series, label=label)
     pylab.xlabel('iterations')
     pylab.ylabel('cross-entropy')
+    pylab.legend()
     pylab.savefig(os.path.join(CUR_DIR, 'project_2b_train.png'))
 
     pylab.figure()
@@ -320,6 +321,7 @@ def tt_comp():
         pylab.plot(range(training_epochs), series, label=label)
     pylab.xlabel('iterations')
     pylab.ylabel('cross-entropy')
+    pylab.legend()
     pylab.savefig(os.path.join(CUR_DIR, 'project_2b_train_ffn.png'))
 
     pylab.figure()
@@ -327,6 +329,7 @@ def tt_comp():
         pylab.plot(range(training_epochs), series, label=label)
     pylab.xlabel('iterations')
     pylab.ylabel('test accuracy')
+    pylab.legend()
     pylab.savefig(os.path.join(CUR_DIR, 'project_2b_test_ffn.png'))
 
     pylab.show()
